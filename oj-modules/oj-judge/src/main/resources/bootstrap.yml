@@ -1,0 +1,6 @@
+server:
+  port: 9204
+
+spring:
+  application:
+    name: oj-judge

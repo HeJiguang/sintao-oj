@@ -1,0 +1,6 @@
+server:
+  port: 9201
+
+spring:
+  application:
+    name: oj-system
