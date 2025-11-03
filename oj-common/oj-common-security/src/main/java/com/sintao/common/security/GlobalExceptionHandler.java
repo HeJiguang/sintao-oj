@@ -44,5 +44,6 @@ public class GlobalExceptionHandler
         String requestURI = request.getRequestURI();
     // log.error("请求地址'{}',发生异常.", requestURI, e);
         return R.fail(ResultCode.ERROR);
+
     }
 }
