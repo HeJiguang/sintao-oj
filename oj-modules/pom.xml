@@ -29,6 +29,16 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.sintao</groupId>
+            <artifactId>oj-common-core</artifactId>
+            <version>${oj-common-core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sintao</groupId>
+            <artifactId>oj-common-security</artifactId>
+            <version>${oj-common-core.security}</version>
+        </dependency>
     </dependencies>
 
 </project>

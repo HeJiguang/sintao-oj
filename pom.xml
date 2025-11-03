@@ -16,6 +16,8 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <packaging>pom</packaging>
     <modules>
         <module>oj-modules</module>
+        <module>oj-modules/oj-system</module>
+        <module>oj-common</module>
     </modules>
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -23,12 +25,21 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
         <spring-boot.version>3.0.1</spring-boot.version>
         <spring-cloud-alibaba.version>2022.0.0.0-RC2</spring-cloud-alibaba.version>
         <spring-cloud.version>2022.0.0</spring-cloud.version>
+        <mybatis-plus.version>3.5.5</mybatis-plus.version>
+        <oj-common-core.version>1.0-SNAPSHOT</oj-common-core.version>
+        <springdoc-openapi.version>2.2.0</springdoc-openapi.version>
+        <oj-common-swagger.version>1.0-SNAPSHOT</oj-common-swagger.version>
+        <oj-common-core.security>1.0-SNAPSHOT</oj-common-core.security>
     </properties>
     <dependencies>
         <!-- bootstrap 启动器 -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-bootstrap</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
     </dependencies>
     <dependencyManagement>
@@ -57,6 +68,9 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+
+
         </dependencies>
     </dependencyManagement>
 </project>
