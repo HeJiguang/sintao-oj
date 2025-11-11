@@ -1,4 +1,4 @@
-package com.sintao.common.core.domain;
+package com.sintao.common.core.domain.domain;
 
 import com.sintao.common.core.domain.enums.ResultCode;
 import lombok.Getter;
@@ -25,6 +25,11 @@ public class R<T> {
         return assembleResult(null, ResultCode.FAILED);
     }
 
+    public static <T> R<T> fail(int code, String msg) {
+        return assembleResult(code, msg, null);
+    }
+
+
     public static <T> R<T> fail(ResultCode resultCode) {
         return assembleResult(null, resultCode);
     }
@@ -34,6 +39,14 @@ public class R<T> {
         R<T> r = new R<T>();
         r.setCode(resultCode.getCode());
         r.setMsg(resultCode.getMsg());
+        r.setData(data);
+        return r;
+    }
+
+    private static <T> R<T> assembleResult(int code,String msg,T data) {
+        R<T> r = new R<T>();
+        r.setCode(code);
+        r.setMsg(msg);
         r.setData(data);
         return r;
     }

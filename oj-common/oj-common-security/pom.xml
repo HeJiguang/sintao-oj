@@ -24,9 +24,19 @@
         </dependency>
 
         <dependency>
+            <groupId>com.sintao</groupId>
+            <artifactId>oj-common-redis</artifactId>
+            <version>${oj-common-core.redis}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
+
+
+
     </dependencies>
 
 </project>

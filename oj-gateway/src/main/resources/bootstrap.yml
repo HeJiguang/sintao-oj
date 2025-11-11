@@ -1,6 +1,6 @@
 spring:
   application:
-    name: oj-system
+    name: oj-gateway
   profiles:
     active: local
   cloud:

@@ -22,7 +22,7 @@
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-            <version>3.5.5</version>
+            <version>${mybatis-plus.version}</version>
         </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
@@ -33,6 +33,18 @@
             <artifactId>oj-common-swagger</artifactId>
             <version>${oj-common-swagger.version}</version>
         </dependency>
-    </dependencies>
+        <dependency>
+            <groupId>com.sintao</groupId>
+            <artifactId>oj-common-redis</artifactId>
+            <version>${oj-common-core.redis}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>${hutool-all.version}</version>
+        </dependency>
+
+</dependencies>
 
 </project>

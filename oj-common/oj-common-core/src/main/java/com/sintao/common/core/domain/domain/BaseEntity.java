@@ -1,4 +1,4 @@
-package com.sintao.common.core.domain;
+package com.sintao.common.core.domain.domain;
 
 import lombok.Getter;
 import lombok.Setter;

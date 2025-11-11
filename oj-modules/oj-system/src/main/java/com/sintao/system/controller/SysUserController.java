@@ -1,8 +1,7 @@
 package com.sintao.system.controller;
 
-import com.sintao.common.core.domain.R;
+import com.sintao.common.core.domain.domain.R;
 import com.sintao.system.domain.LoginDTO;
-import com.sintao.system.domain.SysUser;
 import com.sintao.system.domain.SysUserSaveDTO;
 import com.sintao.system.domain.SysUserVO;
 import com.sintao.system.service.ISysUserService;
@@ -11,11 +10,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.annotation.AliasFor;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -39,7 +35,7 @@ public class SysUserController {
     @ApiResponse(responseCode = "2000", description = "服务繁忙请稍后重试")
     @ApiResponse(responseCode = "3102", description = "用户不存在")
     @ApiResponse(responseCode = "3103", description = "用户名或密码错误")
-    public R<Void> login(@RequestBody LoginDTO loginDTO) {
+    public R<String> login(@RequestBody LoginDTO loginDTO) {
         return sysUserService.login(loginDTO.getUserAccount(),loginDTO.getPassword());
     }
 

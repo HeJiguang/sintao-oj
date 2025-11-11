@@ -18,6 +18,7 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
         <module>oj-modules</module>
         <module>oj-modules/oj-system</module>
         <module>oj-common</module>
+        <module>oj-gateway</module>
     </modules>
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -30,6 +31,11 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
         <springdoc-openapi.version>2.2.0</springdoc-openapi.version>
         <oj-common-swagger.version>1.0-SNAPSHOT</oj-common-swagger.version>
         <oj-common-core.security>1.0-SNAPSHOT</oj-common-core.security>
+        <oj-common-core.redis>1.0-SNAPSHOT</oj-common-core.redis>
+        <fastjson.version>2.0.43</fastjson.version>
+        <jwt.version>0.9.1</jwt.version>
+        <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
+        <hutool-all.version>5.8.22</hutool-all.version>
     </properties>
     <dependencies>
         <!-- bootstrap 启动器 -->
