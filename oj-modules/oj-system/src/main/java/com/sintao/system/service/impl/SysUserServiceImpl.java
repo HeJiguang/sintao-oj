@@ -1,11 +1,15 @@
 package com.sintao.system.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
+import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.sintao.common.core.domain.domain.R;
 import com.sintao.common.core.domain.enums.ResultCode;
 import com.sintao.common.core.domain.enums.UserIdentity;
+import com.sintao.security.exception.ServiceException;
 import com.sintao.security.service.TokenService;
 import com.sintao.system.domain.SysUser;
+import com.sintao.system.domain.SysUserSaveDTO;
 import com.sintao.system.mapper.SysUserMapper;
 import com.sintao.system.service.ISysUserService;
 import com.sintao.system.utils.BCryptUtils;
@@ -13,6 +17,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Service;
+
+import javax.sql.rowset.serial.SerialException;
+import java.time.LocalDateTime;
+import java.util.List;
 
 
 @Service
@@ -58,5 +66,22 @@ public class SysUserServiceImpl implements ISysUserService {
 //
 //        return loginResult;
         return R.fail(ResultCode.FAILED_LOGIN);
+    }
+
+    @Override
+    public int add(SysUserSaveDTO sysUserSaveDTO) {
+        // 将dto转为实体
+        List<SysUser> sysUserList = sysUserMapper.selectList(new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getUserAccount, sysUserSaveDTO.getUserAccount()));
+        if(CollectionUtil.isNotEmpty(sysUserList)){
+            // 用户已经存在
+            // 自定义异常 公共异常类
+            throw new ServiceException(ResultCode.AILED_USER_EXISTS);
+        }
+
+        SysUser sysUser = new SysUser();
+        sysUser.setUserAccount(sysUserSaveDTO.getUserAccount());
+        sysUser.setPassword(BCryptUtils.encryptPassword(sysUserSaveDTO.getPassword()));
+        return sysUserMapper.insert(sysUser);
     }
 }

@@ -5,24 +5,25 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.sintao</groupId>
-        <artifactId>sin-oj</artifactId>
+        <artifactId>oj-common</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>oj-common</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>oj-common-core</module>
-        <module>oj-common-swagger</module>
-        <module>oj-common-security</module>
-        <module>oj-common-redis</module>
-        <module>oj-common-mybatis</module>
-    </modules>
+    <artifactId>oj-common-mybatis</artifactId>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <dependencies>
+        <!-- mybatis-plus -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <version>${mybatis-plus.version}</version>
+        </dependency>
+    </dependencies>
 
 </project>

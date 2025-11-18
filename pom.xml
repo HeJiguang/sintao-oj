@@ -26,7 +26,7 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
         <spring-boot.version>3.0.1</spring-boot.version>
         <spring-cloud-alibaba.version>2022.0.0.0-RC2</spring-cloud-alibaba.version>
         <spring-cloud.version>2022.0.0</spring-cloud.version>
-        <mybatis-plus.version>3.5.5</mybatis-plus.version>
+        <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <oj-common-core.version>1.0-SNAPSHOT</oj-common-core.version>
         <springdoc-openapi.version>2.2.0</springdoc-openapi.version>
         <oj-common-swagger.version>1.0-SNAPSHOT</oj-common-swagger.version>
@@ -36,6 +36,7 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
         <jwt.version>0.9.1</jwt.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
         <hutool-all.version>5.8.22</hutool-all.version>
+        <oj-common-mybatis.version>1.0-SNAPSHOT</oj-common-mybatis.version>
     </properties>
     <dependencies>
         <!-- bootstrap 启动器 -->
