@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sintao.friend.mapper.user.UserSubmitMapper">
+    <select id="selectCurrentUserSubmit" resultType="com.sintao.friend.domain.user.UserSubmit">
+        SELECT
+            submit_id,
+            pass,
+            exe_message,
+            case_judge_res
+        FROM
+            tb_user_submit
+        <where>
+            <if test="questionId != null">
+                AND question_id = #{questionId}
+            </if>
+            <if test="examId !=null ">
+                AND exam_id = #{examId}
+            </if>
+            <if test="examId == null ">
+                AND exam_id is null
+            </if>
+            <if test="userId !=null ">
+                AND user_id = #{userId}
+            </if>
+            <if test="currentTime !=null and currentTime !='' ">
+                AND (create_time &gt;= #{currentTime} or update_time &gt;= #{currentTime})
+            </if>
+        </where>
+
+    </select>
+
+    <select id="selectHostQuestionList" resultType="java.lang.Long">
+        SELECT
+            question_id,
+            count(question_id) hot_count
+        FROM
+            tb_user_submit
+        WHERE
+            exam_id is null
+        GROUP BY
+            question_id
+        ORDER BY
+            hot_count DESC
+    </select>
+</mapper>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sintao.system.mapper.question.QuestionMapper">
+
+    <select id="selectQuestionList" resultType="com.sintao.system.domain.question.vo.QuestionVO">
+        SELECT
+            tq.question_id,
+            tq.title,
+            tq.difficulty,
+            ts.nick_name as create_name,
+            tq.create_time
+        FROM
+            tb_question tq
+        left join
+            tb_sys_user ts
+        on
+            tq.create_by = ts.user_id
+        <where>
+            <if test="difficulty !=null ">
+                AND difficulty = #{difficulty}
+            </if>
+            <if test="title !=null and title !='' ">
+                AND title LIKE CONCAT('%',#{title},'%')
+            </if>
+            <if test="excludeIdSet !=null and !excludeIdSet.isEmpty()">
+                <foreach collection="excludeIdSet" open=" AND tq.question_id NOT IN( " close=" ) " item="id" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY
+        create_time DESC
+    </select>
+</mapper>

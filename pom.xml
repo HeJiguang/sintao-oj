@@ -1,56 +1,86 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.0.1</version>
-        <relativePath/> <!-- lookup parent from repository -->
-    </parent>
-    <groupId>com.sintao</groupId>
-    <artifactId>sin-oj</artifactId>
-    <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
         <module>oj-modules</module>
-        <module>oj-modules/oj-system</module>
         <module>oj-common</module>
         <module>oj-gateway</module>
+        <module>oj-api</module>
     </modules>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.sintao</groupId>
+    <artifactId>sintao-oj</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <spring-boot.version>3.0.1</spring-boot.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <spring-boot.version>3.2.5</spring-boot.version>
         <spring-cloud-alibaba.version>2022.0.0.0-RC2</spring-cloud-alibaba.version>
         <spring-cloud.version>2022.0.0</spring-cloud.version>
-        <mybatis-plus.version>3.5.7</mybatis-plus.version>
-        <oj-common-core.version>1.0-SNAPSHOT</oj-common-core.version>
-        <springdoc-openapi.version>2.2.0</springdoc-openapi.version>
-        <oj-common-swagger.version>1.0-SNAPSHOT</oj-common-swagger.version>
-        <oj-common-core.security>1.0-SNAPSHOT</oj-common-core.security>
-        <oj-common-core.redis>1.0-SNAPSHOT</oj-common-core.redis>
+        <!-- 覆盖 OpenFeign 以兼容 Spring Boot 3.2。4.0.x 将 factoryBeanObjectType 设为 String 会触发 IllegalArgumentException，需要升级到 4.1.x -->
+        <spring-cloud-openfeign.version>4.1.2</spring-cloud-openfeign.version>
+        <mybatis-plus.version>3.5.5</mybatis-plus.version>
         <fastjson.version>2.0.43</fastjson.version>
         <jwt.version>0.9.1</jwt.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
         <hutool-all.version>5.8.22</hutool-all.version>
+        <oj-common-core.version>1.0-SNAPSHOT</oj-common-core.version>
+        <oj-common-swagger.version>1.0-SNAPSHOT</oj-common-swagger.version>
+        <oj-common-security.version>1.0-SNAPSHOT</oj-common-security.version>
+        <oj-common-redis.version>1.0-SNAPSHOT</oj-common-redis.version>
         <oj-common-mybatis.version>1.0-SNAPSHOT</oj-common-mybatis.version>
+        <oj-common-message.version>1.0-SNAPSHOT</oj-common-message.version>
+        <oj-common-file.version>1.0-SNAPSHOT</oj-common-file.version>
+        <oj-common-elsticsearch.version>1.0-SNAPSHOT</oj-common-elsticsearch.version>
+        <springdoc-openapi.version>2.2.0</springdoc-openapi.version>
+        <pagehelper.boot.version>2.0.0</pagehelper.boot.version>
+        <xxl-job.version>2.4.0</xxl-job.version>
+        <transmittable-thread-local.version>2.14.4</transmittable-thread-local.version>
+        <javax-xml-bind.version>2.3.1</javax-xml-bind.version>
+        <javax-activation.version>1.1.1</javax-activation.version>
+        <org-glassfish-jaxb.version>2.3.3</org-glassfish-jaxb.version>
+        <aliyun-oss.version>3.17.4</aliyun-oss.version>
     </properties>
+
     <dependencies>
         <!-- bootstrap 启动器 -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-bootstrap</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
     </dependencies>
+
     <dependencyManagement>
         <dependencies>
+            <!-- 必须放在 BOM 之前：覆盖 Spring Cloud 2022 自带的 OpenFeign 4.0.0，解决 Boot 3.2 中 factoryBeanObjectType 必须为 Class 的兼容问题 -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-starter-openfeign</artifactId>
+                <version>${spring-cloud-openfeign.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-openfeign-core</artifactId>
+                <version>${spring-cloud-openfeign.version}</version>
+            </dependency>
+
             <!-- SpringCloud Alibaba 微服务 -->
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>
@@ -59,6 +89,7 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
             <!-- SpringCloud 微服务 -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -67,6 +98,7 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
             <!-- SpringBoot 依赖配置 -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -76,8 +108,26 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
                 <scope>import</scope>
             </dependency>
 
-
+            <!-- Spring AI 版本管理（使用正式版 1.0.0，Maven Central 已有，阿里云可能已同步） -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>1.0.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>
+
+    <!-- Spring AI 在阿里云可能未同步，增加 Maven Central 以便解析 -->
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+    </repositories>
+
 </project>

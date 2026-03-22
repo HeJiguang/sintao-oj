@@ -1,40 +1,37 @@
-target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
-.kotlin
-
-### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
-*.iws
-*.iml
-*.ipr
-
-### Eclipse ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
+# IDE and editor files
+.idea/
 .vscode/
 
-### Mac OS ###
+# OS files
 .DS_Store
-/.idea/
+Thumbs.db
+
+# Build outputs
+**/target/
+**/out/
+
+# Logs and runtime artifacts
+logs/
+**/*.log
+temp.txt
+
+# Local-only runtime / study materials
+user-code-pool/
+Java-微服务的编程测评系统课件/
+板书/
+scripts/
+
+# Python caches
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Local worktree directories
+.worktrees/
+worktrees/
+
+# Deployment-generated / vendored assets
+deploy/**/elasticSearch/es-plugins/
+deploy/**/elasticsearch/es-plugins/
+deploy/test/nginx/dist/
+deploy/**/*.zip

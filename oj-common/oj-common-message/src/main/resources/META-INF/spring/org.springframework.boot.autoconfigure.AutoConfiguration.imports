@@ -1,0 +1,2 @@
+com.bite.common.message.service.AliSmsService
+com.bite.common.message.config.AliSmsConfig

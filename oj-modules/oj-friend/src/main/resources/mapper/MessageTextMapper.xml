@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sintao.friend.mapper.message.MessageTextMapper">
+
+    <select id="selectUserMsgList" resultType="com.sintao.friend.domain.message.vo.MessageTextVO">
+        SELECT
+            t.text_id,
+            t.message_title,
+            t.message_content
+        FROM
+            tb_message m
+        JOIN
+            tb_message_text  t
+        ON
+            m.text_id = t.text_id
+        WHERE
+            m.rec_id = #{userId}
+        ORDER BY
+            m.create_time DESC
+    </select>
+</mapper>

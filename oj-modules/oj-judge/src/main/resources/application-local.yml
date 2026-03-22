@@ -1,0 +1,14 @@
+# 本地 profile 下的默认配置，用于 IDEA 直接运行。
+# 若 Nacos 中 oj-judge-local 已配置 spring.datasource，会优先使用 Nacos 的配置。
+# Spring Cloud 2022 + Boot 3.2.5 需关闭兼容性校验
+server:
+  port: 9204  # 避免与默认 8080 冲突，与 system(9201)/friend(9202)/job(9203) 同系列
+spring:
+  cloud:
+    compatibility-verifier:
+      enabled: false
+  datasource:
+    url: jdbc:mysql://localhost:3306/bitoj_nacos_local?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: ojtest
+    password: ${MYSQL_PASSWORD:请改为你的MySQL密码}
+    driver-class-name: com.mysql.cj.jdbc.Driver

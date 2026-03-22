@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  oj-gateway:
+    image: bit/oj-gateway:0.0.1-SNAPSHOT
+    # 提供了构建上下文的路径。这意味着Docker将在./bitoj-jar/gateway/目录中寻找构建所需的文件。
+    build:
+      context: ./bitoj-jar/gateway/
+    container_name: oj-gateway
+    environment:
+      # 时区上海
+      TZ: Asia/Shanghai
+      HOST_IP: 服务所在云服务器内网IP
+    ports:
+      - "19090:19090"
+    privileged: true
+
+  oj-system:
+    image: bit/oj-system:0.0.1-SNAPSHOT
+    build:
+      context: ./bitoj-jar/system/
+    container_name: oj-system
+    environment:
+      # 时区上海
+      TZ: Asia/Shanghai
+      HOST_IP: 服务所在云服务器内网IP
+    ports:
+      - "9201:9201"
+    privileged: true
+
+  oj-friend:
+    image: bit/oj-friend:0.0.1-SNAPSHOT
+    build:
+      context: ./bitoj-jar/friend/
+    container_name: oj-friend
+    environment:
+      # 时区上海
+      TZ: Asia/Shanghai
+      HOST_IP: 服务所在云服务器内网IP
+    ports:
+      - "9202:9202"
+    privileged: true
+
+  oj-job:
+    image: bit/oj-job:0.0.1-SNAPSHOT
+    build:
+      context: ./bitoj-jar/job/
+    container_name: oj-job
+    environment:
+      # 时区上海
+      TZ: Asia/Shanghai
+      HOST_IP: 服务所在云服务器内网IP
+    ports:
+      - "9203:9203"
+    privileged: true
+
+  oj-judge:
+    image: bit/oj-judge:0.0.1-SNAPSHOT
+    build:
+      context: ./bitoj-jar/judge/
+    container_name: oj-judge
+    # 将本地目录挂载到容器内的用户代码存储目录
+    volumes:
+      - /user-code-pool:/user-code-pool
+    environment:
+      # 时区上海
+      TZ: Asia/Shanghai
+      HOST_IP: 服务所在云服务器内网IP
+    privileged: true

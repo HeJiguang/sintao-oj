@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sintao.system.mapper.exam.ExamQuestionMapper">
+
+    <select id="selectExamQuestionList" resultType="com.sintao.system.domain.question.vo.QuestionVO">
+        SELECT
+            tq.question_id,
+            tq.title,
+            tq.difficulty
+        FROM
+           tb_exam_question teq
+        join
+            tb_question tq
+        on
+            teq.question_id = tq.question_id
+        where
+            exam_id = #{examId}
+        ORDER BY
+            teq.question_order
+    </select>
+</mapper>

@@ -1,0 +1,3 @@
+com.bite.common.file.config.OSSConfig
+com.bite.common.file.service.OSSService
+com.bite.common.file.config.OSSProperties

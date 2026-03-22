@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sintao.system.mapper.user.UserMapper">
+
+    <select id="selectUserList" resultType="com.sintao.system.domain.user.vo.UserVO">
+        SELECT
+            user_id,
+            nick_name,
+            sex,
+            phone,
+            email,
+            wechat,
+            school_name,
+            major_name,
+            introduce,
+            status
+        FROM
+            tb_user
+        <where>
+            <if test="userId !=null ">
+                user_id = #{userId}
+            </if>
+            <if test="nickName !=null and nickName != ''">
+                AND nick_name like concat('%', #{nickName}, '%')
+            </if>
+        </where>
+        ORDER BY
+            create_time DESC
+    </select>
+</mapper>

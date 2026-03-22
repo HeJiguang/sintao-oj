@@ -3,16 +3,21 @@ package com.sintao.common.redis.config;
 import com.alibaba.fastjson2.JSON;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
+
 import java.nio.charset.Charset;
 
 
 public class JsonRedisSerializer<T> implements RedisSerializer<T> {
     public static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+
     private Class<T> clazz;
+
+
     public JsonRedisSerializer(Class<T> clazz) {
         super();
         this.clazz = clazz;
     }
+
     @Override
     public byte[] serialize(T t) throws SerializationException {
         if (t == null) {
@@ -26,6 +31,8 @@ public class JsonRedisSerializer<T> implements RedisSerializer<T> {
             return null;
         }
         String str = new String(bytes, DEFAULT_CHARSET);
+
         return JSON.parseObject(str, clazz);
     }
 }
+

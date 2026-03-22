@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: oj-judge
+  profiles:
+    active: local
+  cloud:
+    nacos:
+      discovery:
+        namespace: f53dee02-a2c9-428a-8756-46770b722721
+        server-addr: http://localhost:8848
+      config:
+        namespace: f53dee02-a2c9-428a-8756-46770b722721
+        server-addr: http://localhost:8848
+        file-extension: yaml
