@@ -6,13 +6,11 @@ import lombok.Setter;
 
 @Getter
 @Setter
+public class SysUserSaveDTO {
 
-//参数合法性判�?public class SysUserSaveDTO {
-
-    @Schema(description = "用户账号")
+    @Schema(description = "Admin user account")
     private String userAccount;
 
-    @Schema(description = "用户密码")
+    @Schema(description = "Admin user password")
     private String password;
 }
-

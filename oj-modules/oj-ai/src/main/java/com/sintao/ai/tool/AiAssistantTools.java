@@ -5,6 +5,7 @@ import com.sintao.common.core.domain.TableDataInfo;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.Map;
  * AI 助手可调用的工具（Function Calling）。
  * 用于根据关键词检索题目，后续可扩展更多能力。
  */
+@Lazy
 @Component
 public class AiAssistantTools {
 
@@ -67,4 +69,3 @@ public class AiAssistantTools {
         }
     }
 }
-

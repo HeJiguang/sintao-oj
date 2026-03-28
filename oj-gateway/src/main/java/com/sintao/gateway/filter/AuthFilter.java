@@ -4,11 +4,12 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
 import com.sintao.common.core.constants.CacheConstants;
 import com.sintao.common.core.constants.HttpConstants;
+import com.sintao.common.core.domain.LoginUser;
 import com.sintao.common.core.domain.R;
 import com.sintao.common.core.enums.ResultCode;
 import com.sintao.common.core.enums.UserIdentity;
-import com.sintao.common.redis.service.RedisService;
 import com.sintao.common.core.utils.JwtUtils;
+import com.sintao.common.redis.service.RedisService;
 import com.sintao.gateway.properties.IgnoreWhiteProperties;
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
@@ -29,17 +30,13 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-/**
- * 网关鉴权
- *
- */
 @Slf4j
 @Component
 public class AuthFilter implements GlobalFilter, Ordered {
 
-    // 排除过滤�?uri 白名单地址，在nacos自行添加
     @Autowired
     private IgnoreWhiteProperties ignoreWhite;
 
@@ -52,69 +49,74 @@ public class AuthFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
+        String url = request.getURI().getPath();
 
-        String url = request.getURI().getPath(); //请求的接口地址 登录接口是否需要进行身份认证？ �?        // 跳过不需要验证的路径  接口白名单中的所有接口均不需要进行身份的认证
         if (matches(url, ignoreWhite.getWhites())) {
-            //判断如果当前的接口在白名单中则不需要进行身份认�? ignoreWhite.getWhites(): 拿到nacos上配置的接口地址的白名单
             return chain.filter(exchange);
         }
 
-        //执行到这  说明接口不再白名单中  接着进行身份认证逻辑   通过token进行身份认证  首先要把token获取出来
-        //从http请求头中获取token
         String token = getToken(request);
-        if (StrUtil.isEmpty(token)) {
-//            throw new RuntimeException("令牌不能为空");
-            return unauthorizedResponse(exchange, "令牌不能为空");
+        if (StrUtil.isBlank(token)) {
+            return unauthorizedResponse(exchange, "token can not be empty");
         }
+
         Claims claims;
         try {
-            claims = JwtUtils.parseToken(token, secret); //获取令牌中信�? 解析payload中信�? 存储着用户唯一标识信息
-            if (claims == null) {
-                //springcloud gateway 基于webflux
-                return unauthorizedResponse(exchange, "令牌已过期或验证不正确！");
-            }
-        } catch (Exception e) {
-            return unauthorizedResponse(exchange, "令牌已过期或验证不正确！");
+            claims = JwtUtils.parseToken(token, secret);
+        } catch (Exception ex) {
+            log.warn("parse token failed, path={}", url, ex);
+            return unauthorizedResponse(exchange, "token is invalid or expired");
+        }
+        if (claims == null) {
+            return unauthorizedResponse(exchange, "token is invalid or expired");
         }
 
-//        String userId = JwtUtils.getUserId(claims);
-//        boolean isLogin = redisService.hasKey(getTokenKey(userId));
-
-        //通过redis中存储的数据，来控制jwt的过期时�?        String userKey = JwtUtils.getUserKey(claims);  //获取jwt中的key
-        boolean isLogin = redisService.hasKey(getTokenKey(userKey));         //7c114ab4-e4d7-4392-8630-3e248a9cb335         //42752c9a-009a-47bb-8a9c-1d34f4287944
-        if (!isLogin) {
-            return unauthorizedResponse(exchange, "登录状态已过期");
-        }
-        String userId = JwtUtils.getUserId(claims);  //判断jwt中的信息是否完整
-        if (StrUtil.isEmpty(userId)) {
-            return unauthorizedResponse(exchange, "令牌验证失败");
+        String userKey = JwtUtils.getUserKey(claims);
+        String userId = JwtUtils.getUserId(claims);
+        if (StrUtil.hasBlank(userKey, userId)) {
+            return unauthorizedResponse(exchange, "token payload is invalid");
         }
 
-        //token 是正确的 并且没有过期
-        //判断redis存储  关于用户身份认证的信息是否是对的
-        //判断当前请求 请求的是C端功能（只有C端用户可以请求）  还是B端功�? （只有管路员可以请求�?        LoginUser user = redisService.getCacheObject(getTokenKey(userKey), LoginUser.class);
-        if (url.contains(HttpConstants.SYSTEM_URL_PREFIX) && !UserIdentity.ADMIN.getValue().equals(user.getIdentity())) {
-            return unauthorizedResponse(exchange, "令牌验证失败");
-        }
-        if (url.contains(HttpConstants.FRIEND_URL_PREFIX) && !UserIdentity.ORDINARY.getValue().equals(user.getIdentity())) {
-            return unauthorizedResponse(exchange, "令牌验证失败");
+        String tokenKey = getTokenKey(userKey);
+        Boolean hasLoginState = redisService.hasKey(tokenKey);
+        if (!Boolean.TRUE.equals(hasLoginState)) {
+            log.warn("auth redis miss, path={}, userId={}, userKey={}, tokenKey={}", url, userId, userKey, tokenKey);
+            return unauthorizedResponse(exchange, "login status has expired");
         }
 
-        return chain.filter(exchange);
+        LoginUser user = redisService.getCacheObject(tokenKey, LoginUser.class);
+        if (user == null) {
+            log.warn("auth redis hit but login user is null, path={}, userId={}, userKey={}, tokenKey={}",
+                    url, userId, userKey, tokenKey);
+            return unauthorizedResponse(exchange, "login status has expired");
+        }
+
+        if (url.contains(HttpConstants.SYSTEM_URL_PREFIX)
+                && !UserIdentity.ADMIN.getValue().equals(user.getIdentity())) {
+            return unauthorizedResponse(exchange, "unauthorized");
+        }
+        if (url.contains(HttpConstants.FRIEND_URL_PREFIX)
+                && !UserIdentity.ORDINARY.getValue().equals(user.getIdentity())) {
+            return unauthorizedResponse(exchange, "unauthorized");
+        }
+
+        // 【网关统一鉴权透传】将解析后的用户信息注入请求头，传递给下游微服务
+        ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+                .header(HttpConstants.HEADER_USER_ID, userId)
+                .header(HttpConstants.HEADER_USER_KEY, userKey)
+                .build();
+        ServerWebExchange mutatedExchange = exchange.mutate().request(mutatedRequest).build();
+
+        // 【网关统一续期】在网关层完成 Token 续期，下游微服务无需关心
+        extendToken(tokenKey);
+
+        return chain.filter(mutatedExchange);
     }
 
-    /**
-     * 查找指定url是否匹配指定匹配规则链表中的任意一个字符串
-     *
-     * @param url         指定url
-     * @param patternList 需要检查的匹配规则链表
-     * @return 是否匹配
-     */
     private boolean matches(String url, List<String> patternList) {
-        if (StrUtil.isEmpty(url) || CollectionUtils.isEmpty(patternList)) {
+        if (StrUtil.isBlank(url) || CollectionUtils.isEmpty(patternList)) {
             return false;
         }
-        //接口地址如果和白名单中其中一个地址匹配就返回true�?如果便利完白名单中所有的地址都没有匹配的返回false
         for (String pattern : patternList) {
             if (isMatch(pattern, url)) {
                 return true;
@@ -123,99 +125,68 @@ public class AuthFilter implements GlobalFilter, Ordered {
         return false;
     }
 
-    /**
-     * 判断url是否与规则匹�?     * 匹配规则中：
-     * pattern 中可以写一些特殊字�?     * ? 表示单个任意字符;
-     * * 表示一层路径内的任意字符串，不可跨层级;
-     * ** 表示任意层路�?
-     *
-     * @param pattern 匹配规则
-     * @param url     需要匹配的url
-     * @return 是否匹配
-     */
     private boolean isMatch(String pattern, String url) {
-        AntPathMatcher matcher = new AntPathMatcher();
-        return matcher.match(pattern, url);
+        return new AntPathMatcher().match(pattern, url);
     }
 
-    /**
-     * 获取缓存key
-     */
     private String getTokenKey(String token) {
         return CacheConstants.LOGIN_TOKEN_KEY + token;
     }
 
     /**
-     * 从请求头中获取请求token
+     * 网关层统一续期：当 Redis 中的登录态剩余时间低于阈值时，自动延长有效期。
+     * 此职责原先由下游微服务的 TokenInterceptor 承担，现已统一收归网关处理。
      */
+    private void extendToken(String tokenKey) {
+        Long expire = redisService.getExpire(tokenKey, java.util.concurrent.TimeUnit.MINUTES);
+        if (expire != null && expire < CacheConstants.REFRESH_TIME) {
+            redisService.expire(tokenKey, CacheConstants.EXP, java.util.concurrent.TimeUnit.MINUTES);
+        }
+    }
+
     private String getToken(ServerHttpRequest request) {
         String token = request.getHeaders().getFirst(HttpConstants.AUTHENTICATION);
-        // 如果前端设置了令牌前缀，则裁剪掉前缀
         if (StrUtil.isNotEmpty(token) && token.startsWith(HttpConstants.PREFIX)) {
             token = token.replaceFirst(HttpConstants.PREFIX, StrUtil.EMPTY);
+        }
+        if (StrUtil.isBlank(token) && isWebSocketHandshake(request)) {
+            token = request.getQueryParams().getFirst("token");
+            if (StrUtil.isNotEmpty(token) && token.startsWith(HttpConstants.PREFIX)) {
+                token = token.replaceFirst(HttpConstants.PREFIX, StrUtil.EMPTY);
+            }
         }
         return token;
     }
 
-    private Mono<Void> unauthorizedResponse(ServerWebExchange exchange, String msg) {
-        log.error("[鉴权异常处理]请求路径:{}", exchange.getRequest().getPath());
-        return webFluxResponseWriter(exchange.getResponse(), msg, ResultCode.FAILED_UNAUTHORIZED.getCode());
+    private boolean isWebSocketHandshake(ServerHttpRequest request) {
+        String upgrade = request.getHeaders().getFirst(HttpHeaders.UPGRADE);
+        if (StrUtil.isBlank(upgrade)) {
+            return false;
+        }
+        return "websocket".equalsIgnoreCase(upgrade);
     }
 
-    //拼装webflux模型响应
+    private Mono<Void> unauthorizedResponse(ServerWebExchange exchange, String msg) {
+        log.error("auth failed, path={}", exchange.getRequest().getPath());
+        return webFluxResponseWriter(
+                exchange.getResponse(),
+                msg,
+                ResultCode.FAILED_UNAUTHORIZED.getCode()
+        );
+    }
+
     private Mono<Void> webFluxResponseWriter(ServerHttpResponse response, String msg, int code) {
         response.setStatusCode(HttpStatus.OK);
         response.getHeaders().add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         R<?> result = R.fail(code, msg);
-        DataBuffer dataBuffer = response.bufferFactory().wrap(JSON.toJSONString(result).getBytes());
+        DataBuffer dataBuffer = response
+                .bufferFactory()
+                .wrap(JSON.toJSONString(result).getBytes(StandardCharsets.UTF_8));
         return response.writeWith(Mono.just(dataBuffer));
     }
 
     @Override
     public int getOrder() {
-        return -200;  //值越�?过滤器就越先被执�?    }
-
-    public static void main(String[] args) {
-        AuthFilter authFilter = new AuthFilter();
-        String pattern = "/sys/bc";
-        System.out.println(authFilter.isMatch(pattern, "/sys/bc"));   //true
-        System.out.println(authFilter.isMatch(pattern,"/sys/abc"));   //false
-
-//        测试 ?  表示单个任意字符;
-//        String pattern = "/sys/?bc";
-//        System.out.println(authFilter.isMatch(pattern,"/sys/abc"));   //true
-//
-//        System.out.println(authFilter.isMatch(pattern,"/sys/cbc"));   //true
-//
-//        System.out.println(authFilter.isMatch(pattern,"/sys/acbc"));  //false
-//
-//
-//        System.out.println(authFilter.isMatch(pattern,"/sdsa/abc"));   //false
-//        System.out.println(authFilter.isMatch(pattern,"/sys/abcw"));   //false
-
-//        测试*  表示一层路径内的任意字符串，不可跨层级;  一�?/ 就是一个层�?//        String pattern = "/sys/*/bc";
-//        System.out.println(authFilter.isMatch(pattern,"/sys/a/bc"));   //true
-//
-//        System.out.println(authFilter.isMatch(pattern,"/sys/sdasdsadsad/bc"));  //true
-//
-//
-//        System.out.println(authFilter.isMatch(pattern,"/sys/a/b/bc"));   //false
-//
-//
-//        System.out.println(authFilter.isMatch(pattern,"/b/bc"));   //false
-//
-//
-//        System.out.println(authFilter.isMatch(pattern,"/sys/a"));  //false
-
-//        测试**  表示任意层路�?
-//        String pattern = "/sys/**/bc";
-//        System.out.println(authFilter.isMatch(pattern, "/sys/a/bc"));  //true
-//        System.out.println(authFilter.isMatch(pattern, "/sys/sdasdsadsad/bc"));  //true
-//        System.out.println(authFilter.isMatch(pattern, "/sys/a/b/bc"));  //true
-//        System.out.println(authFilter.isMatch(pattern, "/sys/a/b/s/23/432/fdsf///bc")); //true
-//
-//        System.out.println(authFilter.isMatch(pattern, "/a/b/s/23/432/fdsf///bc"));   //false
-//        System.out.println(authFilter.isMatch(pattern, "/sys/a/b/s/23/432/fdsf///")); //false
+        return -200;
     }
 }
-

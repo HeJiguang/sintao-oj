@@ -87,6 +87,14 @@ public class RedisService {
         redisTemplate.opsForValue().set(key, value, timeout, timeUnit);
     }
 
+    public <T> boolean setCacheObjectIfAbsent(final String key,
+                                              final T value,
+                                              final Long timeout,
+                                              final TimeUnit timeUnit) {
+        Boolean success = redisTemplate.opsForValue().setIfAbsent(key, value, timeout, timeUnit);
+        return Boolean.TRUE.equals(success);
+    }
+
     /**
      * 获得缓存的基本对象�?     *
      * @param key 缓存键�?     * @return 缓存键值对应的数据

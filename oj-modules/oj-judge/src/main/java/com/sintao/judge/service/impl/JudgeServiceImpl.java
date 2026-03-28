@@ -3,12 +3,16 @@ package com.sintao.judge.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.sintao.api.domain.UserExeResult;
 import com.sintao.api.domain.dto.JudgeSubmitDTO;
 import com.sintao.api.domain.vo.UserQuestionResultVO;
 import com.sintao.common.core.constants.Constants;
 import com.sintao.common.core.constants.JudgeConstants;
+import com.sintao.common.core.domain.dto.JudgeResultPushDTO;
 import com.sintao.common.core.enums.CodeRunStatus;
+import com.sintao.common.core.enums.JudgeAsyncStatus;
+import com.sintao.common.redis.service.JudgeResultPushService;
 import com.sintao.judge.domain.SandBoxExecuteResult;
 import com.sintao.judge.domain.UserSubmit;
 import com.sintao.judge.mapper.UserSubmitMapper;
@@ -19,8 +23,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -35,11 +41,28 @@ public class JudgeServiceImpl implements IJudgeService {
     @Autowired
     private UserSubmitMapper userSubmitMapper;
 
+    @Autowired
+    private JudgeResultPushService judgeResultPushService;
+
     @Override
     public UserQuestionResultVO doJudgeJavaCode(JudgeSubmitDTO judgeSubmitDTO) {
         log.info("---- 判题逻辑开始 -------");
-        SandBoxExecuteResult sandBoxExecuteResult =
-                sandboxPoolService.exeJavaCode(judgeSubmitDTO.getUserId(), judgeSubmitDTO.getUserCode(), judgeSubmitDTO.getInputList());
+        SandBoxExecuteResult sandBoxExecuteResult;
+        try {
+            sandBoxExecuteResult = sandboxPoolService.exeJavaCode(
+                    judgeSubmitDTO.getUserId(),
+                    judgeSubmitDTO.getUserCode(),
+                    judgeSubmitDTO.getInputList()
+            );
+        } catch (Exception e) {
+            log.warn("Sandbox pool execution failed, fallback to standalone sandbox, requestId={}",
+                    judgeSubmitDTO.getRequestId(), e);
+            sandBoxExecuteResult = sandboxService.exeJavaCode(
+                    judgeSubmitDTO.getUserId(),
+                    judgeSubmitDTO.getUserCode(),
+                    judgeSubmitDTO.getInputList()
+            );
+        }
         UserQuestionResultVO userQuestionResultVO = new UserQuestionResultVO();
         if (sandBoxExecuteResult != null && CodeRunStatus.SUCCEED.equals(sandBoxExecuteResult.getRunStatus())) {
             // 比对直接结果，以及时间限制、空间限制
@@ -53,6 +76,7 @@ public class JudgeServiceImpl implements IJudgeService {
             }
             userQuestionResultVO.setScore(JudgeConstants.ERROR_SCORE);
         }
+        userQuestionResultVO.setExeMessage(resolveExeMessage(userQuestionResultVO));
         saveUserSubmit(judgeSubmitDTO, userQuestionResultVO);
         log.info("判题逻辑结束，判题结果为：{} ", userQuestionResultVO);
         return userQuestionResultVO;
@@ -124,6 +148,30 @@ public class JudgeServiceImpl implements IJudgeService {
     }
 
     private void saveUserSubmit(JudgeSubmitDTO judgeSubmitDTO, UserQuestionResultVO userQuestionResultVO) {
+        if (judgeSubmitDTO.getRequestId() != null) {
+            String caseJudgeRes = JSON.toJSONString(userQuestionResultVO.getUserExeResultList());
+            LocalDateTime finishTime = LocalDateTime.now();
+            userSubmitMapper.update(null, new UpdateWrapper<UserSubmit>()
+                    .eq("request_id", judgeSubmitDTO.getRequestId())
+                    .set("pass", userQuestionResultVO.getPass())
+                    .set("score", userQuestionResultVO.getScore())
+                    .set("exe_message", userQuestionResultVO.getExeMessage())
+                    .set("case_judge_res", caseJudgeRes)
+                    .set("judge_status", JudgeAsyncStatus.SUCCESS.getValue())
+                    .set("finish_time", finishTime)
+                    .set("update_by", judgeSubmitDTO.getUserId()));
+            JudgeResultPushDTO pushDTO = new JudgeResultPushDTO();
+            pushDTO.setRequestId(judgeSubmitDTO.getRequestId());
+            pushDTO.setUserId(judgeSubmitDTO.getUserId());
+            pushDTO.setAsyncStatus(JudgeAsyncStatus.SUCCESS.getValue());
+            pushDTO.setPass(userQuestionResultVO.getPass());
+            pushDTO.setExeMessage(userQuestionResultVO.getExeMessage());
+            pushDTO.setCaseJudgeRes(caseJudgeRes);
+            pushDTO.setScore(userQuestionResultVO.getScore());
+            pushDTO.setFinishTime(finishTime);
+            judgeResultPushService.publishFinalResult(pushDTO);
+            return;
+        }
         UserSubmit userSubmit = new UserSubmit();
         BeanUtil.copyProperties(userQuestionResultVO, userSubmit);
         userSubmit.setUserId(judgeSubmitDTO.getUserId());
@@ -139,6 +187,16 @@ public class JudgeServiceImpl implements IJudgeService {
                 .isNull(judgeSubmitDTO.getExamId() == null, UserSubmit::getExamId)
                 .eq(judgeSubmitDTO.getExamId() != null, UserSubmit::getExamId, judgeSubmitDTO.getExamId()));
         userSubmitMapper.insert(userSubmit);
+    }
+
+    private String resolveExeMessage(UserQuestionResultVO userQuestionResultVO) {
+        if (userQuestionResultVO.getExeMessage() != null && !userQuestionResultVO.getExeMessage().isBlank()) {
+            return userQuestionResultVO.getExeMessage();
+        }
+        if (Objects.equals(userQuestionResultVO.getPass(), Constants.TRUE)) {
+            return CodeRunStatus.SUCCEED.getMsg();
+        }
+        return CodeRunStatus.UNKNOWN_FAILED.getMsg();
     }
 }
 

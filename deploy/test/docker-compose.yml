@@ -8,7 +8,7 @@ services:
         # 时区上海
         TZ: Asia/Shanghai
         # root 密码
-        MYSQL_ROOT_PASSWORD: 123456
+        MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-local}
       ports:
         - "3306:3306"
       volumes:
@@ -20,7 +20,7 @@ services:
         --collation-server=utf8mb4_general_ci
       # 通过执行特定的 MySQL 命令来检查服务的健康状态
       healthcheck:
-        test: ["CMD", "mysqladmin", "ping", "-u", "root", "-p123456"]
+        test: ["CMD", "mysqladmin", "ping", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-change-me-local}"]
         interval: 10s
         timeout: 5s
         retries: 10
@@ -38,7 +38,7 @@ services:
       - MYSQL_SERVICE_PORT=3306
       - MYSQL_SERVICE_DB_NAME=bitoj_nacos_local
       - MYSQL_SERVICE_USER=ojtest
-      - MYSQL_SERVICE_PASSWORD=123456
+      - MYSQL_SERVICE_PASSWORD=${MYSQL_SERVICE_PASSWORD:-change-me-local}
     volumes:
       - ./nacos/conf/application.properties:/home/nacos/conf/application.properties
     # 将容器的 8848 和 9848 端口映射到主机的对应端口
@@ -61,7 +61,7 @@ services:
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://oj-mysql-server:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
       - SPRING_DATASOURCE_USERNAME=ojtest
-      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_SERVICE_PASSWORD:-change-me-local}
     # 假设xxl-job监听在8080端口
     ports:
       - "8080:8080"
@@ -79,7 +79,7 @@ services:
       - ./redis/data:/data
     # 设置 Redis 的访问密码。
     environment:
-      REQUIREPASS: 123456
+      REQUIREPASS: ${REDIS_PASSWORD:-change-me-local}
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
@@ -257,3 +257,6 @@ services:
         condition: service_healthy
       oj-rabbitMQ-server:
         condition: service_healthy
+
+volumes:
+  user-code-pool:

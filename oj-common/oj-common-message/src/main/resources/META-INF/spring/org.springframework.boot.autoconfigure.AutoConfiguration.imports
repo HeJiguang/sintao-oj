@@ -1,2 +1,3 @@
-com.bite.common.message.service.AliSmsService
-com.bite.common.message.config.AliSmsConfig
+com.sintao.common.message.service.AliSmsService
+com.sintao.common.message.service.MailService
+com.sintao.common.message.config.AliSmsConfig

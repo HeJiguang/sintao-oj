@@ -12,6 +12,7 @@ Thumbs.db
 
 # Logs and runtime artifacts
 logs/
+runtime-logs/
 **/*.log
 temp.txt
 
@@ -20,11 +21,17 @@ user-code-pool/
 Java-微服务的编程测评系统课件/
 板书/
 scripts/
+temp/
+docs/superpowers/
+deploy/dev/agent/
+deploy/dev/nacos/
+tmp-*.sql
 
 # Python caches
 **/__pycache__/
 *.pyc
 *.pyo
+oj-agent/.env.local
 
 # Local worktree directories
 .worktrees/

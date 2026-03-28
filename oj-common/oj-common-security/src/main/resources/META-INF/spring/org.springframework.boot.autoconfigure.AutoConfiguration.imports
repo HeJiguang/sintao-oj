@@ -1,4 +1,5 @@
-com.bite.common.security.handler.GlobalExceptionHandler
-com.bite.common.security.service.service.com.sintao.common.security.TokenService
-com.bite.common.security.config.WebMvcConfig
-com.bite.common.security.interceptor.TokenInterceptor
+com.sintao.common.security.handler.GlobalExceptionHandler
+com.sintao.common.security.service.TokenService
+com.sintao.common.security.config.WebMvcConfig
+com.sintao.common.security.interceptor.TokenInterceptor
+com.sintao.common.security.properties.SecurityProperties

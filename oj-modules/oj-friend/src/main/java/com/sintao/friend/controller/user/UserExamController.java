@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/user/exam")
-@Tag(name = "C 端用户竞赛接口", description = "竞赛报名、我的竞赛列表等接口")
+@Tag(name = "C 端用户测试接口", description = "测试报名和我的测试列表接口")
 public class UserExamController extends BaseController {
 
     @Autowired
@@ -31,19 +31,18 @@ public class UserExamController extends BaseController {
 
     @CheckUserStatus
     @PostMapping("/enter")
-    @Operation(summary = "报名竞赛", description = "用户报名参加指定竞赛，需在竞赛开始前报名")
+    @Operation(summary = "报名阶段测试", description = "用户报名参加指定测试，需要在测试开始前报名")
     @Parameter(name = HttpConstants.AUTHENTICATION, in = ParameterIn.HEADER, description = "登录凭证", required = true)
     @ApiResponse(responseCode = "200", description = "报名成功")
-    @ApiResponse(responseCode = "2000", description = "竞赛不存在、已开始、已报名或用户已被禁用")
+    @ApiResponse(responseCode = "2000", description = "测试不存在、已开始、已报名或用户状态异常")
     public R<Void> enter(@RequestHeader(HttpConstants.AUTHENTICATION) String token, @RequestBody ExamDTO examDTO) {
         return toR(userExamService.enter(token, examDTO.getExamId()));
     }
 
     @GetMapping("/list")
-    @Operation(summary = "我的竞赛列表", description = "分页查询当前用户已报名的竞赛列表")
+    @Operation(summary = "我的测试列表", description = "分页查询当前用户已报名的测试列表")
     @ApiResponse(responseCode = "200", description = "成功返回分页数据")
     public TableDataInfo list(ExamQueryDTO examQueryDTO) {
         return userExamService.list(examQueryDTO);
     }
 }
-

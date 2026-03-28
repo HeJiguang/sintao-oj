@@ -11,6 +11,14 @@ public class QuestionAddDTO {
 
     private Integer difficulty;
 
+    private String algorithmTag;
+
+    private String knowledgeTags;
+
+    private Integer estimatedMinutes;
+
+    private Integer trainingEnabled;
+
     private Long timeLimit;
 
     private Long spaceLimit;

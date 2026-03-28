@@ -1,5 +1,33 @@
-# Spring Cloud 2022.0.0 官方仅支持 Boot 3.0.x，项目已升级到 3.2.5，关闭兼容性校验以正常启动
+# Spring Cloud 2022.0.0 officially supports Boot 3.0.x.
+# This project uses Boot 3.2.5, so compatibility verification is disabled locally.
 spring:
   cloud:
     compatibility-verifier:
       enabled: false
+  rabbitmq:
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+
+mail:
+  host: smtp.qq.com
+  port: 587
+  username: your_email@qq.com
+  password: your_smtp_auth_code
+  from: your_email@qq.com
+  subject: OnlineOJ email code
+  auth: true
+  starttls: true
+  starttls-required: true
+  ssl-protocols: TLSv1.2
+  code-expiration: 5
+  send-limit: 3
+  is-send: false
+
+training:
+  agent:
+    service-id: oj-agent
+    base-url:
+    plan-path: /api/training/plan
+    candidate-limit: 40

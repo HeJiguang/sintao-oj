@@ -9,7 +9,7 @@ import com.sintao.friend.domain.user.vo.UserVO;
 public interface IUserService {
     boolean sendCode(UserDTO userDTO);
 
-    String codeLogin(String phone, String code);
+    String codeLogin(String email, String code);
 
     boolean logout(String token);
 

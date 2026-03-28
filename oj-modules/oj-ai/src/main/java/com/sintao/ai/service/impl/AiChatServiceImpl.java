@@ -6,6 +6,7 @@ import com.sintao.ai.tool.AiAssistantTools;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -15,7 +16,8 @@ import org.springframework.util.StringUtils;
  * 支持 Function Calling：可根据关键词推荐题目（search_questions_by_keyword）。
  * 若配置了 RAG（QuestionAnswerAdvisor），会先从向量库检索算法等资料再回答。
  */
-@Service
+@Lazy
+@Service("legacyAiChatService")
 public class AiChatServiceImpl implements AiChatService {
 
     @Autowired

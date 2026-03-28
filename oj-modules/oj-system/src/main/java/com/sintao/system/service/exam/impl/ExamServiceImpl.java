@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.pagehelper.PageHelper;
 import com.sintao.common.core.constants.Constants;
 import com.sintao.common.core.enums.ResultCode;
 import com.sintao.common.security.exception.ServiceException;
@@ -22,7 +23,6 @@ import com.sintao.system.mapper.exam.ExamMapper;
 import com.sintao.system.mapper.exam.ExamQuestionMapper;
 import com.sintao.system.mapper.question.QuestionMapper;
 import com.sintao.system.service.exam.IExamService;
-import com.github.pagehelper.PageHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -93,31 +93,6 @@ public class ExamServiceImpl extends ServiceImpl<ExamQuestionMapper, ExamQuestio
                 .eq(ExamQuestion::getQuestionId, questionId));
     }
 
-//    @Override
-    // 竞赛题目列表未维护题目在竞赛当中的顺�?//    public ExamDetailVO detailV1(Long examId) {
-//        ExamDetailVO examDetailVO = new ExamDetailVO();
-//        Exam exam = getExam(examId);
-//        BeanUtil.copyProperties(exam, examDetailVO);
-//        List<ExamQuestion> examQuestionList = examQuestionMapper.selectList(new LambdaQueryWrapper<ExamQuestion>()
-//                .select(ExamQuestion::getQuestionId)
-//                .eq(ExamQuestion::getExamId, examId)
-//                .orderByAsc(ExamQuestion::getQuestionOrder));
-//        if (CollectionUtil.isEmpty(examQuestionList)) {
-//            //返回详情  只包含竞赛的基本信息
-//            return examDetailVO;
-//        }
-//        List<Long> questionIdList = examQuestionList.stream().map(ExamQuestion::getQuestionId).toList();
-//
-//        //select  * from  tb_question question_id in (1,2,3)
-//        List<Question> questionList = questionMapper.selectList(new LambdaQueryWrapper<Question>()
-//                .select(Question::getQuestionId, Question::getTitle, Question::getDifficulty)
-//                .in(Question::getQuestionId, questionIdList));
-////        List<QuestionVO> questionVOList = new ArrayList<>();
-//        List<QuestionVO> questionVOList = BeanUtil.copyToList(questionList, QuestionVO.class);
-//        examDetailVO.setExamQuestionList(questionVOList);
-//        return examDetailVO;
-//    }
-
     @Override
     public ExamDetailVO detail(Long examId) {
         ExamDetailVO examDetailVO = new ExamDetailVO();
@@ -154,13 +129,12 @@ public class ExamServiceImpl extends ServiceImpl<ExamQuestionMapper, ExamQuestio
         checkExam(exam);
         examQuestionMapper.delete(new LambdaQueryWrapper<ExamQuestion>()
                 .eq(ExamQuestion::getExamId, examId));
-        return examMapper.deleteById(exam);
+        return examMapper.deleteById(examId);
     }
 
     @Override
     public int publish(Long examId) {
         Exam exam = getExam(examId);
-        //select count(0) from tb_exam_question where exam_id = #{examId}
         if (exam.getEndTime().isBefore(LocalDateTime.now())) {
             throw new ServiceException(ResultCode.EXAM_IS_FINISH);
         }
@@ -170,8 +144,6 @@ public class ExamServiceImpl extends ServiceImpl<ExamQuestionMapper, ExamQuestio
             throw new ServiceException(ResultCode.EXAM_NOT_HAS_QUESTION);
         }
         exam.setStatus(Constants.TRUE);
-
-        //要将新发布的竞赛数据存储到redis   e:t:l  e:d:examId
         examCacheManager.addCache(exam);
         return examMapper.updateById(exam);
     }
@@ -189,15 +161,15 @@ public class ExamServiceImpl extends ServiceImpl<ExamQuestionMapper, ExamQuestio
     }
 
     private void checkExamSaveParams(ExamAddDTO examSaveDTO, Long examId) {
-        //1、竞赛标题是否重复进行判�?  2、竞赛开始、结束时间进行判�?        List<Exam> examList = examMapper
-                .selectList(new LambdaQueryWrapper<Exam>()
-                        .eq(Exam::getTitle, examSaveDTO.getTitle())
-                        .ne(examId != null, Exam::getExamId, examId));
+        List<Exam> examList = examMapper.selectList(new LambdaQueryWrapper<Exam>()
+                .eq(Exam::getTitle, examSaveDTO.getTitle())
+                .ne(examId != null, Exam::getExamId, examId));
         if (CollectionUtil.isNotEmpty(examList)) {
             throw new ServiceException(ResultCode.FAILED_ALREADY_EXISTS);
         }
         if (examSaveDTO.getStartTime().isBefore(LocalDateTime.now())) {
-            throw new ServiceException(ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME);  //竞赛开始时间不能早于当前时�?        }
+            throw new ServiceException(ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME);
+        }
         if (examSaveDTO.getStartTime().isAfter(examSaveDTO.getEndTime())) {
             throw new ServiceException(ResultCode.EXAM_START_TIME_AFTER_END_TIME);
         }
@@ -230,4 +202,3 @@ public class ExamServiceImpl extends ServiceImpl<ExamQuestionMapper, ExamQuestio
         return exam;
     }
 }
-

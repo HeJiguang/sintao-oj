@@ -25,89 +25,88 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/exam")
-@Tag(name = "竞赛管理接口")
+@Tag(name = "后台测试管理接口")
 public class ExamController extends BaseController {
 
     @Autowired
     private IExamService examService;
 
     @GetMapping("/list")
-    @Operation(summary = "竞赛列表", description = "分页查询竞赛列表，支持按标题等条件筛选")
+    @Operation(summary = "测试列表", description = "分页查询测试列表，支持按标题等条件筛选")
     @ApiResponse(responseCode = "200", description = "成功返回分页数据")
     public TableDataInfo list(ExamQueryDTO examQueryDTO) {
         return getTableDataInfo(examService.list(examQueryDTO));
     }
 
     @PostMapping("/add")
-    @Operation(summary = "新增竞赛", description = "创建新竞赛，返回竞赛ID")
-    @ApiResponse(responseCode = "1000", description = "新增成功，返回竞赛ID")
+    @Operation(summary = "新增测试", description = "创建新的阶段测试，并返回测试ID")
+    @ApiResponse(responseCode = "1000", description = "新增成功，返回测试ID")
     @ApiResponse(responseCode = "2000", description = "服务繁忙，请稍后重试")
     public R<String> add(@RequestBody ExamAddDTO examAddDTO) {
         return R.ok(examService.add(examAddDTO));
     }
 
     @PostMapping("/question/add")
-    @Operation(summary = "竞赛添加题目", description = "为指定竞赛关联题目")
+    @Operation(summary = "测试添加题目", description = "为指定测试关联题目")
     @ApiResponse(responseCode = "1000", description = "添加成功")
-    @ApiResponse(responseCode = "2000", description = "题目不存在、竞赛已发布或服务异常")
+    @ApiResponse(responseCode = "2000", description = "题目不存在、测试已发布或服务异常")
     public R<Void> questionAdd(@RequestBody ExamQuestAddDTO examQuestAddDTO) {
         return toR(examService.questionAdd(examQuestAddDTO));
     }
 
     @DeleteMapping("/question/delete")
-    @Operation(summary = "竞赛移除题目", description = "从竞赛中移除指定题目")
-    @Parameter(name = "examId", in = ParameterIn.QUERY, description = "竞赛ID", required = true)
+    @Operation(summary = "测试移除题目", description = "从指定测试中移除题目")
+    @Parameter(name = "examId", in = ParameterIn.QUERY, description = "测试ID", required = true)
     @Parameter(name = "questionId", in = ParameterIn.QUERY, description = "题目ID", required = true)
     @ApiResponse(responseCode = "1000", description = "移除成功")
-    @ApiResponse(responseCode = "2000", description = "竞赛已发布或服务异常")
+    @ApiResponse(responseCode = "2000", description = "测试已发布或服务异常")
     public R<Void> questionDelete(
-            @Parameter(description = "竞赛ID") Long examId,
+            @Parameter(description = "测试ID") Long examId,
             @Parameter(description = "题目ID") Long questionId) {
         return toR(examService.questionDelete(examId, questionId));
     }
 
     @GetMapping("/detail")
-    @Operation(summary = "竞赛详情", description = "根据竞赛 ID 获取竞赛详情及关联题目")
-    @Parameter(name = "examId", in = ParameterIn.QUERY, description = "竞赛ID", required = true)
-    @ApiResponse(responseCode = "1000", description = "成功返回竞赛详情")
-    @ApiResponse(responseCode = "2000", description = "竞赛不存在或服务异常")
-    public R<ExamDetailVO> detail(@Parameter(description = "竞赛ID") Long examId) {
+    @Operation(summary = "测试详情", description = "根据测试ID获取测试详情和关联题目")
+    @Parameter(name = "examId", in = ParameterIn.QUERY, description = "测试ID", required = true)
+    @ApiResponse(responseCode = "1000", description = "成功返回测试详情")
+    @ApiResponse(responseCode = "2000", description = "测试不存在或服务异常")
+    public R<ExamDetailVO> detail(@Parameter(description = "测试ID") Long examId) {
         return R.ok(examService.detail(examId));
     }
 
     @PutMapping("/edit")
-    @Operation(summary = "编辑竞赛", description = "更新竞赛信息，仅未发布的竞赛可编辑")
+    @Operation(summary = "编辑测试", description = "更新测试信息，未发布测试可编辑")
     @ApiResponse(responseCode = "1000", description = "编辑成功")
-    @ApiResponse(responseCode = "2000", description = "竞赛已发布或服务异常")
+    @ApiResponse(responseCode = "2000", description = "测试已发布或服务异常")
     public R<Void> edit(@RequestBody ExamEditDTO examEditDTO) {
         return toR(examService.edit(examEditDTO));
     }
 
     @DeleteMapping("/delete")
-    @Operation(summary = "删除竞赛", description = "删除竞赛，仅未发布的竞赛可删除")
-    @Parameter(name = "examId", in = ParameterIn.QUERY, description = "竞赛ID", required = true)
+    @Operation(summary = "删除测试", description = "删除测试，未发布测试可删除")
+    @Parameter(name = "examId", in = ParameterIn.QUERY, description = "测试ID", required = true)
     @ApiResponse(responseCode = "1000", description = "删除成功")
-    @ApiResponse(responseCode = "2000", description = "竞赛已发布或服务异常")
-    public R<Void> delete(@Parameter(description = "竞赛ID") Long examId) {
+    @ApiResponse(responseCode = "2000", description = "测试已发布或服务异常")
+    public R<Void> delete(@Parameter(description = "测试ID") Long examId) {
         return toR(examService.delete(examId));
     }
 
     @PutMapping("/publish")
-    @Operation(summary = "发布竞赛", description = "发布竞赛，发布后竞赛将出现在 C 端未完赛列表并写入 Redis")
-    @Parameter(name = "examId", in = ParameterIn.QUERY, description = "竞赛ID", required = true)
+    @Operation(summary = "发布测试", description = "发布测试，发布后会出现在用户侧测试列表并写入缓存")
+    @Parameter(name = "examId", in = ParameterIn.QUERY, description = "测试ID", required = true)
     @ApiResponse(responseCode = "1000", description = "发布成功")
-    @ApiResponse(responseCode = "2000", description = "竞赛已结束、无题目或服务异常")
-    public R<Void> publish(@Parameter(description = "竞赛ID") Long examId) {
+    @ApiResponse(responseCode = "2000", description = "测试已结束、没有题目或服务异常")
+    public R<Void> publish(@Parameter(description = "测试ID") Long examId) {
         return toR(examService.publish(examId));
     }
 
     @PutMapping("/cancelPublish")
-    @Operation(summary = "取消发布", description = "取消竞赛发布，并从 Redis 中移除")
-    @Parameter(name = "examId", in = ParameterIn.QUERY, description = "竞赛ID", required = true)
+    @Operation(summary = "取消发布", description = "取消测试发布，并从缓存中移除")
+    @Parameter(name = "examId", in = ParameterIn.QUERY, description = "测试ID", required = true)
     @ApiResponse(responseCode = "1000", description = "取消成功")
-    @ApiResponse(responseCode = "2000", description = "竞赛已开始或服务异常")
-    public R<Void> cancelPublish(@Parameter(description = "竞赛ID") Long examId) {
+    @ApiResponse(responseCode = "2000", description = "测试已开始或服务异常")
+    public R<Void> cancelPublish(@Parameter(description = "测试ID") Long examId) {
         return toR(examService.cancelPublish(examId));
     }
 }
-

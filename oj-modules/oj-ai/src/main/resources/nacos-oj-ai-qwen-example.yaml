@@ -6,7 +6,7 @@ server:
   port: 9205
 
 jwt:
-  secret: zshadioasjdkasdsadassa
+  secret: ${JWT_SECRET:change-me-local-jwt-secret}
 
 spring:
   ai:

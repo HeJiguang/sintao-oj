@@ -1,0 +1,177 @@
+from dataclasses import dataclass
+import os
+from pathlib import Path
+from typing import Any
+
+from app.core.nacos_config import load_nacos_config as _load_nacos_config
+import yaml
+
+
+DEFAULT_RAG_DOC_GLOB = str(
+    Path(__file__).resolve().parents[2] / "resources" / "knowledge" / "algorithm-docs" / "*.md"
+)
+
+
+@dataclass(frozen=True)
+class AgentSettings:
+    port: int
+    llm_provider: str
+    llm_base_url: str | None
+    llm_api_key: str | None
+    chat_model: str | None
+    training_model: str | None
+    llm_timeout_seconds: float
+    llm_temperature: float
+    llm_max_tokens: int
+    llm_enabled: bool
+    llm_fallback_enabled: bool
+    gateway_user_id_header: str
+    rag_enabled: bool
+    rag_doc_globs: tuple[str, ...]
+    rag_top_k: int
+    rag_max_snippet_chars: int
+    nacos_config_enabled: bool
+    nacos_config_data_id: str
+    nacos_enabled: bool
+    nacos_server_addr: str | None
+    nacos_namespace: str | None
+    nacos_group: str
+    nacos_username: str | None
+    nacos_password: str | None
+    nacos_service_name: str
+    nacos_ip: str
+    nacos_port: int
+
+
+def _to_bool(raw: str | bool | None, default: bool) -> bool:
+    if raw is None:
+        return default
+    if isinstance(raw, bool):
+        return raw
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _load_env_file() -> None:
+    env_file = os.getenv("OJ_AGENT_ENV_FILE")
+    if not env_file:
+        return
+
+    path = Path(env_file)
+    if not path.exists():
+        return
+
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        key, value = stripped.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+def _nested(config: dict[str, Any], *keys: str) -> Any:
+    current: Any = config
+    for key in keys:
+        if not isinstance(current, dict) or key not in current:
+            return None
+        current = current[key]
+    return current
+
+
+def _read_str(config: dict[str, Any], env_key: str, path: tuple[str, ...], default: str | None = None) -> str | None:
+    raw = os.getenv(env_key)
+    if raw is not None:
+        return raw
+    value = _nested(config, *path)
+    if value is None:
+        return default
+    return str(value)
+
+
+def _read_bool(config: dict[str, Any], env_key: str, path: tuple[str, ...], default: bool) -> bool:
+    raw = os.getenv(env_key)
+    if raw is not None:
+        return _to_bool(raw, default)
+    value = _nested(config, *path)
+    return _to_bool(value, default)
+
+
+def _read_int(config: dict[str, Any], env_key: str, path: tuple[str, ...], default: int) -> int:
+    raw = os.getenv(env_key)
+    if raw is not None:
+        return int(raw)
+    value = _nested(config, *path)
+    return int(value) if value is not None else default
+
+
+def _read_float(config: dict[str, Any], env_key: str, path: tuple[str, ...], default: float) -> float:
+    raw = os.getenv(env_key)
+    if raw is not None:
+        return float(raw)
+    value = _nested(config, *path)
+    return float(value) if value is not None else default
+
+
+def _read_globs(config: dict[str, Any]) -> tuple[str, ...]:
+    raw = os.getenv("OJ_AGENT_RAG_DOC_GLOBS")
+    if raw:
+        parts = [item.strip() for item in raw.split(";") if item.strip()]
+        return tuple(parts)
+
+    value = _nested(config, "rag", "doc-globs")
+    if isinstance(value, list):
+        parts = [str(item).strip() for item in value if str(item).strip()]
+        if parts:
+            return tuple(parts)
+
+    if isinstance(value, str) and value.strip():
+        return tuple(item.strip() for item in value.split(";") if item.strip())
+
+    return (DEFAULT_RAG_DOC_GLOB,)
+
+
+def load_settings() -> AgentSettings:
+    _load_env_file()
+    nacos_payload = _load_nacos_config()
+    nacos_config = dict(nacos_payload.get("data") or {})
+    if not nacos_config and nacos_payload.get("raw"):
+        parsed = yaml.safe_load(str(nacos_payload["raw"])) or {}
+        if isinstance(parsed, dict):
+            nacos_config = parsed
+
+    port = _read_int(nacos_config, "OJ_AGENT_PORT", ("server", "port"), 8015)
+    llm_api_key = _read_str(nacos_config, "OJ_AGENT_LLM_API_KEY", ("llm", "api-key"))
+    chat_model = _read_str(nacos_config, "OJ_AGENT_CHAT_MODEL", ("llm", "chat-model"))
+    training_model = _read_str(nacos_config, "OJ_AGENT_TRAINING_MODEL", ("llm", "training-model"))
+
+    return AgentSettings(
+        port=port,
+        llm_provider=_read_str(nacos_config, "OJ_AGENT_LLM_PROVIDER", ("llm", "provider"), "openai_compatible") or "openai_compatible",
+        llm_base_url=_read_str(nacos_config, "OJ_AGENT_LLM_BASE_URL", ("llm", "base-url")),
+        llm_api_key=llm_api_key,
+        chat_model=chat_model,
+        training_model=training_model,
+        llm_timeout_seconds=_read_float(nacos_config, "OJ_AGENT_LLM_TIMEOUT_SECONDS", ("llm", "timeout-seconds"), 30.0),
+        llm_temperature=_read_float(nacos_config, "OJ_AGENT_LLM_TEMPERATURE", ("llm", "temperature"), 0.2),
+        llm_max_tokens=_read_int(nacos_config, "OJ_AGENT_LLM_MAX_TOKENS", ("llm", "max-tokens"), 1200),
+        llm_enabled=bool(llm_api_key and (chat_model or training_model)),
+        llm_fallback_enabled=_read_bool(nacos_config, "OJ_AGENT_LLM_FALLBACK_ENABLED", ("llm", "fallback-enabled"), True),
+        gateway_user_id_header=_read_str(nacos_config, "OJ_AGENT_GATEWAY_USER_ID_HEADER", ("agent", "gateway-user-id-header"), "X-User-Id") or "X-User-Id",
+        rag_enabled=_read_bool(nacos_config, "OJ_AGENT_RAG_ENABLED", ("rag", "enabled"), True),
+        rag_doc_globs=_read_globs(nacos_config),
+        rag_top_k=_read_int(nacos_config, "OJ_AGENT_RAG_TOP_K", ("rag", "top-k"), 3),
+        rag_max_snippet_chars=_read_int(nacos_config, "OJ_AGENT_RAG_MAX_SNIPPET_CHARS", ("rag", "max-snippet-chars"), 420),
+        nacos_config_enabled=_to_bool(os.getenv("OJ_AGENT_NACOS_CONFIG_ENABLED"), bool(os.getenv("OJ_AGENT_NACOS_SERVER_ADDR"))),
+        nacos_config_data_id=os.getenv("OJ_AGENT_NACOS_CONFIG_DATA_ID", "oj-agent-local.yaml"),
+        nacos_enabled=_read_bool(nacos_config, "OJ_AGENT_NACOS_ENABLED", ("nacos", "enabled"), False),
+        nacos_server_addr=os.getenv("OJ_AGENT_NACOS_SERVER_ADDR"),
+        nacos_namespace=os.getenv("OJ_AGENT_NACOS_NAMESPACE") or _read_str(nacos_config, "OJ_AGENT_NACOS_NAMESPACE", ("nacos", "namespace")),
+        nacos_group=os.getenv("OJ_AGENT_NACOS_GROUP", _read_str(nacos_config, "OJ_AGENT_NACOS_GROUP", ("nacos", "group"), "DEFAULT_GROUP") or "DEFAULT_GROUP"),
+        nacos_username=os.getenv("OJ_AGENT_NACOS_USERNAME"),
+        nacos_password=os.getenv("OJ_AGENT_NACOS_PASSWORD"),
+        nacos_service_name=_read_str(nacos_config, "OJ_AGENT_NACOS_SERVICE_NAME", ("nacos", "service-name"), "oj-agent") or "oj-agent",
+        nacos_ip=_read_str(nacos_config, "OJ_AGENT_NACOS_IP", ("nacos", "ip"), "127.0.0.1") or "127.0.0.1",
+        nacos_port=_read_int(nacos_config, "OJ_AGENT_NACOS_PORT", ("nacos", "port"), port),
+    )

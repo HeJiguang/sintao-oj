@@ -4,6 +4,8 @@ import com.sintao.api.domain.vo.UserQuestionResultVO;
 import com.sintao.common.core.controller.BaseController;
 import com.sintao.common.core.domain.R;
 import com.sintao.friend.domain.user.dto.UserSubmitDTO;
+import com.sintao.friend.domain.user.vo.AsyncSubmitResponseVO;
+import com.sintao.friend.domain.user.vo.UserSubmissionHistoryVO;
 import com.sintao.friend.service.user.IUserQuestionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,41 +19,55 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/user/question")
-@Tag(name = "C 端答题接口", description = "用户提交代码、查询判题结果等接口")
+@Tag(name = "用户答题接口", description = "用户提交代码、查询判题结果和查看提交记录")
 public class UserQuestionController extends BaseController {
 
     @Autowired
     private IUserQuestionService userQuestionService;
 
     @PostMapping("/submit")
-    @Operation(summary = "同步提交代码", description = "提交代码并同步等待判题结果，适用于需要立即返回结果的场景")
-    @ApiResponse(responseCode = "200", description = "判题完成，返回判题结果")
+    @Operation(summary = "同步提交代码", description = "提交代码并同步等待判题结果")
+    @ApiResponse(responseCode = "200", description = "判题完成并返回结果")
     @ApiResponse(responseCode = "2000", description = "不支持的语言类型或判题失败")
     public R<UserQuestionResultVO> submit(@RequestBody UserSubmitDTO submitDTO) {
         return userQuestionService.submit(submitDTO);
     }
 
     @PostMapping("/rabbit/submit")
-    @Operation(summary = "异步提交代码", description = "通过 RabbitMQ 异步提交代码，立即返回，需轮询 exe/result 获取判题结果")
+    @Operation(summary = "异步提交代码", description = "通过 RabbitMQ 异步提交代码，返回 requestId 供后续查询")
     @ApiResponse(responseCode = "200", description = "提交成功")
     @ApiResponse(responseCode = "2000", description = "不支持的语言类型或消息发送失败")
-    public R<Void> rabbitSubmit(@RequestBody UserSubmitDTO submitDTO) {
-        return toR(userQuestionService.rabbitSubmit(submitDTO));
+    public R<AsyncSubmitResponseVO> rabbitSubmit(@RequestBody UserSubmitDTO submitDTO) {
+        return R.ok(userQuestionService.rabbitSubmit(submitDTO));
     }
 
     @GetMapping("/exe/result")
-    @Operation(summary = "查询判题结果", description = "轮询获取异步提交的判题结果，currentTime 为提交时的时间戳")
-    @Parameter(name = "examId", in = ParameterIn.QUERY, description = "竞赛ID，练习题为空")
+    @Operation(summary = "查询判题结果", description = "优先按 requestId 查询异步判题结果，未传 requestId 时回退到原有时间窗口查询")
+    @Parameter(name = "examId", in = ParameterIn.QUERY, description = "测试ID，练习题为空")
     @Parameter(name = "questionId", in = ParameterIn.QUERY, description = "题目ID", required = true)
-    @Parameter(name = "currentTime", in = ParameterIn.QUERY, description = "提交时间，用于筛选该次提交")
-    @ApiResponse(responseCode = "200", description = "成功返回判题结果，pass 为判题中时表示尚未完成")
+    @Parameter(name = "currentTime", in = ParameterIn.QUERY, description = "提交时间，用于兼容原有时间窗口查询")
+    @Parameter(name = "requestId", in = ParameterIn.QUERY, description = "异步请求ID")
+    @ApiResponse(responseCode = "200", description = "成功返回判题结果")
     public R<UserQuestionResultVO> exeResult(
-            @Parameter(description = "竞赛ID") Long examId,
+            @Parameter(description = "测试ID") Long examId,
             @Parameter(description = "题目ID") Long questionId,
-            @Parameter(description = "提交时间") String currentTime) {
-        return R.ok(userQuestionService.exeResult(examId, questionId, currentTime));
+            @Parameter(description = "提交时间") String currentTime,
+            @Parameter(description = "异步请求ID") String requestId) {
+        return R.ok(userQuestionService.exeResult(examId, questionId, currentTime, requestId));
+    }
+
+    @GetMapping("/submission/list")
+    @Operation(summary = "提交记录", description = "查询当前登录用户在某道题下最近的提交记录列表")
+    @Parameter(name = "examId", in = ParameterIn.QUERY, description = "测试ID，练习题为空")
+    @Parameter(name = "questionId", in = ParameterIn.QUERY, description = "题目ID", required = true)
+    @ApiResponse(responseCode = "200", description = "成功返回提交记录列表")
+    public R<List<UserSubmissionHistoryVO>> submissionHistory(
+            @Parameter(description = "测试ID") Long examId,
+            @Parameter(description = "题目ID") Long questionId) {
+        return R.ok(userQuestionService.submissionHistory(examId, questionId));
     }
 }
-

@@ -25,30 +25,30 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/user")
-@Tag(name = "C 端用户接口", description = "用户注册、登录、个人信息等接口")
+@Tag(name = "C 端用户接口", description = "用户登录、注册、个人信息等接口")
 public class UserController extends BaseController {
 
     @Autowired
     private IUserService userService;
 
     @PostMapping("sendCode")
-    @Operation(summary = "发送验证码", description = "向指定手机号发送短信验证码，用于登录或注册")
+    @Operation(summary = "发送验证码", description = "向指定邮箱发送邮件验证码，用于登录或注册")
     @ApiResponse(responseCode = "200", description = "发送成功")
-    @ApiResponse(responseCode = "2000", description = "手机号格式错误、发送过于频繁或超出每日限制")
+    @ApiResponse(responseCode = "2000", description = "邮箱格式错误、发送过于频繁或超过当日限制")
     public R<Void> sendCode(@RequestBody UserDTO userDTO) {
         return toR(userService.sendCode(userDTO));
     }
 
     @PostMapping("/code/login")
-    @Operation(summary = "验证码登录", description = "使用手机号验证码登录，新用户自动注册")
+    @Operation(summary = "验证码登录", description = "使用邮箱验证码登录，新用户自动注册")
     @ApiResponse(responseCode = "200", description = "登录成功，返回 token")
     @ApiResponse(responseCode = "2000", description = "验证码错误或已过期")
     public R<String> codeLogin(@RequestBody UserDTO userDTO) {
-        return R.ok(userService.codeLogin(userDTO.getPhone(), userDTO.getCode()));
+        return R.ok(userService.codeLogin(userDTO.getEmail(), userDTO.getCode()));
     }
 
     @DeleteMapping("/logout")
-    @Operation(summary = "退出登录", description = "退出登录，清除服务端 token")
+    @Operation(summary = "退出登录", description = "退出登录并清除服务端 token")
     @Parameter(name = HttpConstants.AUTHENTICATION, in = ParameterIn.HEADER, description = "登录凭证", required = true)
     @ApiResponse(responseCode = "200", description = "退出成功")
     public R<Void> logout(@RequestHeader(HttpConstants.AUTHENTICATION) String token) {
@@ -65,7 +65,7 @@ public class UserController extends BaseController {
     }
 
     @GetMapping("/detail")
-    @Operation(summary = "用户详情", description = "获取当前用户完整信息（昵称、头像、学校、专业等）")
+    @Operation(summary = "用户详情", description = "获取当前用户完整信息")
     @ApiResponse(responseCode = "200", description = "成功返回用户详情")
     @ApiResponse(responseCode = "2000", description = "用户不存在或未登录")
     public R<UserVO> detail() {
@@ -88,4 +88,3 @@ public class UserController extends BaseController {
         return toR(userService.updateHeadImage(userUpdateDTO.getHeadImage()));
     }
 }
-

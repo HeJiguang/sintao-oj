@@ -16,7 +16,6 @@
         <module>oj-friend</module>
         <module>oj-job</module>
         <module>oj-judge</module>
-        <module>oj-ai</module>
     </modules>
 
     <properties>

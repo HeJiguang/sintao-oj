@@ -1,6 +1,8 @@
 package com.sintao.friend.service.exam.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.sintao.common.core.constants.Constants;
 import com.sintao.common.core.domain.TableDataInfo;
 import com.sintao.common.core.utils.ThreadLocalUtil;
@@ -14,8 +16,6 @@ import com.sintao.friend.manager.UserCacheManager;
 import com.sintao.friend.mapper.exam.ExamMapper;
 import com.sintao.friend.mapper.user.UserExamMapper;
 import com.sintao.friend.service.exam.IExamService;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -46,7 +46,7 @@ public class ExamServiceImpl implements IExamService {
 
     @Override
     public TableDataInfo redisList(ExamQueryDTO examQueryDTO) {
-        //从redis当中获取  竞赛列表的数�?        Long total = examCacheManager.getListSize(examQueryDTO.getType(), null);
+        Long total = examCacheManager.getListSize(examQueryDTO.getType(), null);
         List<ExamVO> examVOList;
         if (total == null || total <= 0) {
             examVOList = list(examQueryDTO);
@@ -131,4 +131,3 @@ public class ExamServiceImpl implements IExamService {
         }
     }
 }
-

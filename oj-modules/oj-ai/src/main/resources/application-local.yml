@@ -9,7 +9,7 @@ spring:
     redis:
       host: localhost
       port: 16379
-      password: 123456
+      password: ${REDIS_PASSWORD:change-me-local}
   # RAG：使用 Qwen/DashScope 时设为 true（通义提供 embedding）；使用 DeepSeek 时保持 false
   ai:
     rag:
@@ -21,3 +21,15 @@ spring:
         base-url: https://dashscope.aliyuncs.com/compatible-mode
         options:
           model: text-embedding-v4
+
+ai:
+  agent:
+    facade:
+      mode: langgraph
+      base-url: http://localhost:8000
+      chat-path: /api/chat
+      stream-path: /api/chat/stream
+
+jwt:
+  # Local-only placeholder so oj-ai can start without extra JWT flags during facade smoke tests.
+  secret: ${JWT_SECRET:change-me-local-jwt-secret}

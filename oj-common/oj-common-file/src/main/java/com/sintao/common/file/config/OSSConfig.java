@@ -1,4 +1,4 @@
-﻿package com.sintao.common.file.config;
+package com.sintao.common.file.config;
 
 import com.aliyun.oss.ClientBuilderConfiguration;
 import com.aliyun.oss.ClientException;
@@ -20,18 +20,18 @@ public class OSSConfig {
     @Autowired
     private OSSProperties prop;
 
-    public OSS ossClient;
+    private OSS ossClient;
 
     @Bean
     public OSS ossClient() throws ClientException {
         DefaultCredentialProvider credentialsProvider = CredentialsProviderFactory.newDefaultCredentialProvider(
-                prop.getAccessKeyId(), prop.getAccessKeySecret());
+                prop.getAccessKeyId(),
+                prop.getAccessKeySecret()
+        );
 
-        // 创建 ClientBuilderConfiguration
         ClientBuilderConfiguration clientBuilderConfiguration = new ClientBuilderConfiguration();
         clientBuilderConfiguration.setSignatureVersion(SignVersion.V4);
 
-        // 娴ｈ法鏁ら崘鍛秹endpoint鏉╂稖顢戞稉濠佺炊
         ossClient = OSSClientBuilder.create()
                 .endpoint(prop.getEndpoint())
                 .credentialsProvider(credentialsProvider)
@@ -43,7 +43,8 @@ public class OSSConfig {
 
     @PreDestroy
     public void closeOSSClient() {
-        ossClient.shutdown();
+        if (ossClient != null) {
+            ossClient.shutdown();
+        }
     }
 }
-

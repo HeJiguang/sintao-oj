@@ -1,8 +1,7 @@
-﻿package com.sintao.judge.config;
+package com.sintao.judge.config;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.io.FileUtil;
-import com.sintao.common.core.constants.JudgeConstants;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
@@ -14,6 +13,7 @@ import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Volume;
+import com.sintao.common.core.constants.JudgeConstants;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -26,31 +26,27 @@ import java.util.concurrent.BlockingQueue;
 @Slf4j
 public class DockerSandBoxPool {
 
-    private DockerClient dockerClient;
+    private static final String[] KEEPALIVE_CMD = {"sh", "-c", "while true; do sleep 3600; done"};
 
-    private String sandboxImage;
-
-    private String volumeDir;
-
-    private Long memoryLimit;
-
-    private Long memorySwapLimit;
-
-    private Long cpuLimit;
-
-    private int poolSize;
-
-    private String containerNamePrefix;
-
-    private BlockingQueue<String> containerQueue;
-
-    private Map<String, String> containerNameMap;
+    private final DockerClient dockerClient;
+    private final String sandboxImage;
+    private final String volumeDir;
+    private final Long memoryLimit;
+    private final Long memorySwapLimit;
+    private final Long cpuLimit;
+    private final int poolSize;
+    private final String containerNamePrefix;
+    private final BlockingQueue<String> containerQueue;
+    private final Map<String, String> containerNameMap;
 
     public DockerSandBoxPool(DockerClient dockerClient,
                              String sandboxImage,
-                             String volumeDir, Long memoryLimit,
-                             Long memorySwapLimit, Long cpuLimit,
-                             int poolSize, String containerNamePrefix) {
+                             String volumeDir,
+                             Long memoryLimit,
+                             Long memorySwapLimit,
+                             Long cpuLimit,
+                             int poolSize,
+                             String containerNamePrefix) {
         this.dockerClient = dockerClient;
         this.sandboxImage = sandboxImage;
         this.volumeDir = volumeDir;
@@ -58,67 +54,86 @@ public class DockerSandBoxPool {
         this.memorySwapLimit = memorySwapLimit;
         this.cpuLimit = cpuLimit;
         this.poolSize = poolSize;
-        this.containerQueue = new ArrayBlockingQueue<>(poolSize);
         this.containerNamePrefix = containerNamePrefix;
+        this.containerQueue = new ArrayBlockingQueue<>(poolSize);
         this.containerNameMap = new HashMap<>();
     }
 
-    public void initDockerPool() {  // 初始化容器池
-        log.info("------ 创建容器开始 ------");
+    public void initDockerPool() {
+        log.info("------ Creating sandbox pool ------");
+        for (int i = 0; i < poolSize; i++) {
             createContainer(containerNamePrefix + "-" + i);
         }
-        log.info("------ 创建容器结束 ------");
+        log.info("------ Sandbox pool ready ------");
     }
 
     public String getContainer() {
         try {
-            return containerQueue.take();
+            String containerId = containerQueue.take();
+            ensureContainerRunning(containerId);
+            return containerId;
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for a sandbox container", e);
         }
     }
 
     public void returnContainer(String containerId) {
-        containerQueue.add(containerId);
+        if (containerId == null) {
+            return;
+        }
+        if (!containerQueue.offer(containerId)) {
+            throw new IllegalStateException("Sandbox pool is full, cannot return container " + containerId);
+        }
+    }
+
+    public String getCodeDir(String containerId) {
+        String containerName = containerNameMap.get(containerId);
+        if (containerName == null) {
+            throw new IllegalStateException("Unknown sandbox container: " + containerId);
+        }
+        return baseCodeDir() + File.separator + containerName;
     }
 
     private void createContainer(String containerName) {
         List<Container> containerList = dockerClient.listContainersCmd().withShowAll(true).exec();
         if (!CollectionUtil.isEmpty(containerList)) {
-            String names = JudgeConstants.JAVA_CONTAINER_PREFIX + containerName;
+            String dockerContainerName = JudgeConstants.JAVA_CONTAINER_PREFIX + containerName;
             for (Container container : containerList) {
                 String[] containerNames = container.getNames();
-                if (containerNames != null && containerNames.length > 0 && names.equals(containerNames[0])) {
-                    if ("created".equals(container.getState()) || "exited".equals(container.getState())) {
-                        // 启动容器
-                        dockerClient.startContainerCmd(container.getId()).exec();
+                if (containerNames != null && containerNames.length > 0 && dockerContainerName.equals(containerNames[0])) {
+                    if ("running".equals(container.getState())) {
+                        containerQueue.offer(container.getId());
+                        containerNameMap.put(container.getId(), containerName);
+                        return;
                     }
-                    containerQueue.add(container.getId());
-                    containerNameMap.put(container.getId(), containerName);
-                    return;
+                    dockerClient.removeContainerCmd(container.getId()).withForce(true).exec();
+                    break;
                 }
             }
         }
 
-        // 拉取镜像
         pullJavaEnvImage();
-        // 创建容器，限制资源和权限
         HostConfig hostConfig = getHostConfig(containerName);
-        CreateContainerCmd containerCmd = dockerClient
-                .createContainerCmd(sandboxImage)
-                .withName(containerName);
-        CreateContainerResponse createContainerResponse = containerCmd
+        CreateContainerCmd containerCmd = dockerClient.createContainerCmd(sandboxImage).withName(containerName);
+        CreateContainerResponse response = containerCmd
                 .withHostConfig(hostConfig)
                 .withAttachStderr(true)
                 .withAttachStdout(true)
                 .withTty(true)
+                .withCmd(KEEPALIVE_CMD)
                 .exec();
-        // 记录容器 ID
-        String containerId = createContainerResponse.getId();
-        // 启动容器
+        String containerId = response.getId();
         dockerClient.startContainerCmd(containerId).exec();
-        containerQueue.add(containerId);
+        containerQueue.offer(containerId);
         containerNameMap.put(containerId, containerName);
+    }
+
+    private void ensureContainerRunning(String containerId) {
+        Boolean running = dockerClient.inspectContainerCmd(containerId).exec().getState().getRunning();
+        if (!Boolean.TRUE.equals(running)) {
+            dockerClient.startContainerCmd(containerId).exec();
+        }
     }
 
     private void pullJavaEnvImage() {
@@ -134,36 +149,36 @@ public class DockerSandBoxPool {
         try {
             pullImageCmd.exec(new PullImageResultCallback()).awaitCompletion();
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while pulling sandbox image " + sandboxImage, e);
         }
     }
 
-    // 限制资源和控制权限
     private HostConfig getHostConfig(String containerName) {
-        HostConfig hostConfig = new HostConfig();
-        // 设置挂载目录，指定用户代码路径
         String userCodeDir = createContainerDir(containerName);
-        //闄愬埗docker瀹瑰櫒浣跨敤璧勬簮
-        // 限制 Docker 容器使用资源
+        HostConfig hostConfig = new HostConfig();
+        hostConfig.setBinds(new Bind(userCodeDir, new Volume(volumeDir)));
+        hostConfig.withMemory(memoryLimit);
         hostConfig.withMemorySwap(memorySwapLimit);
         hostConfig.withCpuCount(cpuLimit);
-        hostConfig.withNetworkMode("none");  // 禁用网络
-        hostConfig.withReadonlyRootfs(true); // 禁止在 root 目录写文件
+        hostConfig.withNetworkMode("none");
+        hostConfig.withReadonlyRootfs(true);
         return hostConfig;
-
-    public String getCodeDir(String containerId) {
-        String containerName = containerNameMap.get(containerId);
-        log.info("containerName锛歿}", containerName);
-        return System.getProperty("user.dir") + File.separator + JudgeConstants.CODE_DIR_POOL + File.separator + containerName;
     }
 
-    // 为每个容器创建指定挂载目录
     private String createContainerDir(String containerName) {
-        // 一级目录，存放所有容器的挂载目录
+        String codeDir = baseCodeDir();
         if (!FileUtil.exist(codeDir)) {
             FileUtil.mkdir(codeDir);
         }
-        return codeDir + File.separator + containerName;
+        String containerDir = codeDir + File.separator + containerName;
+        if (!FileUtil.exist(containerDir)) {
+            FileUtil.mkdir(containerDir);
+        }
+        return containerDir;
+    }
+
+    private String baseCodeDir() {
+        return System.getProperty("user.dir") + File.separator + JudgeConstants.CODE_DIR_POOL;
     }
 }
-

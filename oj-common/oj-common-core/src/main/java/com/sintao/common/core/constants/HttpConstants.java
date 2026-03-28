@@ -19,5 +19,15 @@ public class HttpConstants {
      * 令牌前缀
      */
     public static final String PREFIX = "Bearer ";
+
+    /**
+     * 网关透传给下游微服务的内部请求头：用户ID
+     */
+    public static final String HEADER_USER_ID = "X-User-Id";
+
+    /**
+     * 网关透传给下游微服务的内部请求头：用户Key（Redis会话标识）
+     */
+    public static final String HEADER_USER_KEY = "X-User-Key";
 }
 

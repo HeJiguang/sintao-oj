@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -40,4 +41,14 @@ public class UserSubmit extends BaseEntity {
 	private String exeMessage;
 
 	private String caseJudgeRes;
+
+	private String requestId;
+
+	private Integer judgeStatus;
+
+	private Integer retryCount;
+
+	private String lastError;
+
+	private LocalDateTime finishTime;
 }

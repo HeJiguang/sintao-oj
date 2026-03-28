@@ -25,6 +25,18 @@ public class QuestionES {
     @Field(type = FieldType.Byte)
     private Integer difficulty;
 
+    @Field(type = FieldType.Keyword)
+    private String algorithmTag;
+
+    @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_max_word")
+    private String knowledgeTags;
+
+    @Field(type = FieldType.Integer)
+    private Integer estimatedMinutes;
+
+    @Field(type = FieldType.Byte)
+    private Integer trainingEnabled;
+
     @Field(type = FieldType.Long)
     private Long timeLimit;
 

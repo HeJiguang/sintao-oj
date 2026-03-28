@@ -3,3 +3,10 @@ spring:
   cloud:
     compatibility-verifier:
       enabled: false
+
+ai:
+  gateway:
+    route-enabled: true
+    uri: ${AI_GATEWAY_URI:lb://oj-agent}
+    public-prefix: /ai
+    target-prefix: /api

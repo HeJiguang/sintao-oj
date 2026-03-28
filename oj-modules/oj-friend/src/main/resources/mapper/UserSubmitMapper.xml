@@ -28,7 +28,10 @@
                 AND (create_time &gt;= #{currentTime} or update_time &gt;= #{currentTime})
             </if>
         </where>
-
+        ORDER BY
+            COALESCE(update_time, create_time) DESC,
+            submit_id DESC
+        LIMIT 1
     </select>
 
     <select id="selectHostQuestionList" resultType="java.lang.Long">
@@ -43,5 +46,70 @@
             question_id
         ORDER BY
             hot_count DESC
+    </select>
+
+    <select id="selectLatestExamSubmit" resultType="com.sintao.friend.domain.user.UserSubmit">
+        SELECT
+            submit_id,
+            user_id,
+            question_id,
+            exam_id,
+            program_type,
+            user_code,
+            pass,
+            score,
+            exe_message,
+            case_judge_res,
+            create_by,
+            create_time,
+            update_by,
+            update_time
+        FROM
+            tb_user_submit
+        WHERE
+            user_id = #{userId}
+            AND exam_id = #{examId}
+            <if test="sinceTime != null">
+                AND (create_time &gt;= #{sinceTime} OR update_time &gt;= #{sinceTime})
+            </if>
+        ORDER BY
+            COALESCE(update_time, create_time) DESC,
+            submit_id DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectSubmissionHistory" resultType="com.sintao.friend.domain.user.UserSubmit">
+        SELECT
+            submit_id,
+            user_id,
+            question_id,
+            exam_id,
+            program_type,
+            user_code,
+            pass,
+            score,
+            exe_message,
+            case_judge_res,
+            create_by,
+            create_time,
+            update_by,
+            update_time
+        FROM
+            tb_user_submit
+        WHERE
+            user_id = #{userId}
+            AND question_id = #{questionId}
+            <choose>
+                <when test="examId != null">
+                    AND exam_id = #{examId}
+                </when>
+                <otherwise>
+                    AND exam_id IS NULL
+                </otherwise>
+            </choose>
+        ORDER BY
+            COALESCE(update_time, create_time) DESC,
+            submit_id DESC
+        LIMIT #{limit}
     </select>
 </mapper>

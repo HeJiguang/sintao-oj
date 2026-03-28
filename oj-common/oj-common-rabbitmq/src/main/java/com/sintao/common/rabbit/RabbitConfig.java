@@ -1,7 +1,14 @@
 package com.sintao.common.rabbit;
 
 import com.sintao.common.core.constants.RabbitMQConstants;
+import org.springframework.amqp.core.AcknowledgeMode;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
@@ -10,14 +17,71 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
 
+    private static final int RETRY_DELAY_MILLIS = 15000;
+
+    @Bean
+    public DirectExchange judgeExchange() {
+        return new DirectExchange(RabbitMQConstants.OJ_JUDGE_EXCHANGE, true, false);
+    }
+
+    @Bean
+    public DirectExchange judgeDeadLetterExchange() {
+        return new DirectExchange(RabbitMQConstants.OJ_JUDGE_DLX_EXCHANGE, true, false);
+    }
+
     @Bean
     public Queue workQueue() {
-        return new Queue(RabbitMQConstants.OJ_WORK_QUEUE, true);
+        return QueueBuilder.durable(RabbitMQConstants.OJ_WORK_QUEUE).build();
+    }
+
+    @Bean
+    public Queue retryQueue() {
+        return QueueBuilder.durable(RabbitMQConstants.OJ_RETRY_QUEUE)
+                .ttl(RETRY_DELAY_MILLIS)
+                .deadLetterExchange(RabbitMQConstants.OJ_JUDGE_EXCHANGE)
+                .deadLetterRoutingKey(RabbitMQConstants.JUDGE_SUBMIT_KEY)
+                .build();
+    }
+
+    @Bean
+    public Queue deadQueue() {
+        return QueueBuilder.durable(RabbitMQConstants.OJ_DEAD_QUEUE).build();
+    }
+
+    @Bean
+    public Binding workQueueBinding(Queue workQueue, DirectExchange judgeExchange) {
+        return BindingBuilder.bind(workQueue)
+                .to(judgeExchange)
+                .with(RabbitMQConstants.JUDGE_SUBMIT_KEY);
+    }
+
+    @Bean
+    public Binding retryQueueBinding(Queue retryQueue, DirectExchange judgeDeadLetterExchange) {
+        return BindingBuilder.bind(retryQueue)
+                .to(judgeDeadLetterExchange)
+                .with(RabbitMQConstants.JUDGE_RETRY_KEY);
+    }
+
+    @Bean
+    public Binding deadQueueBinding(Queue deadQueue, DirectExchange judgeDeadLetterExchange) {
+        return BindingBuilder.bind(deadQueue)
+                .to(judgeDeadLetterExchange)
+                .with(RabbitMQConstants.JUDGE_DEAD_KEY);
     }
 
     @Bean
     public MessageConverter messageConverter() {
         return new Jackson2JsonMessageConverter();
+    }
+
+    @Bean
+    public SimpleRabbitListenerContainerFactory manualAckRabbitListenerContainerFactory(ConnectionFactory connectionFactory,
+                                                                                        MessageConverter messageConverter) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setMessageConverter(messageConverter);
+        factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
+        return factory;
     }
 }
 

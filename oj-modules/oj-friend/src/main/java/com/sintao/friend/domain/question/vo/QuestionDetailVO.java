@@ -11,6 +11,14 @@ public class QuestionDetailVO extends QuestionVO {
 
     private Long spaceLimit;
 
+    private String algorithmTag;
+
+    private String knowledgeTags;
+
+    private Integer estimatedMinutes;
+
+    private Integer trainingEnabled;
+
     private String content;
 
     private String defaultCode;

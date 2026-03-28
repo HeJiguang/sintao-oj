@@ -1,9 +1,10 @@
-﻿package com.sintao.system.service.question.impl;
+package com.sintao.system.service.question.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.github.pagehelper.PageHelper;
 import com.sintao.common.core.constants.Constants;
 import com.sintao.common.core.enums.ResultCode;
 import com.sintao.common.security.exception.ServiceException;
@@ -18,7 +19,6 @@ import com.sintao.system.elasticsearch.QuestionRepository;
 import com.sintao.system.manager.QuestionCacheManager;
 import com.sintao.system.mapper.question.QuestionMapper;
 import com.sintao.system.service.question.IQuestionService;
-import com.github.pagehelper.PageHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 
 @Service
 @Slf4j
@@ -42,7 +41,6 @@ public class QuestionServiceImpl implements IQuestionService {
     @Autowired
     private QuestionCacheManager questionCacheManager;
 
-    //rrTTT   1821828072921452500
     @Override
     public List<QuestionVO> list(QuestionQueryDTO questionQueryDTO) {
         String excludeIdStr = questionQueryDTO.getExcludeIdStr();
@@ -54,13 +52,7 @@ public class QuestionServiceImpl implements IQuestionService {
             questionQueryDTO.setExcludeIdSet(excludeIdSet);
         }
         PageHelper.startPage(questionQueryDTO.getPageNum(), questionQueryDTO.getPageSize());
-        List<QuestionVO> questionVOList = questionMapper.selectQuestionList(questionQueryDTO);
-        return questionVOList;
-        //questionVOList == null || questionVOList.isEmpty()
-//        if (CollectionUtil.isEmpty(questionVOList)) {
-//            return TableDataInfo.empty();
-//        }
-//        new PageInfo<>(questionVOList).getTotal(); // 获取符合查询条件的数据总数
+        return questionMapper.selectQuestionList(questionQueryDTO);
     }
 
     @Override
@@ -102,6 +94,10 @@ public class QuestionServiceImpl implements IQuestionService {
         }
         oldQuestion.setTitle(questionEditDTO.getTitle());
         oldQuestion.setDifficulty(questionEditDTO.getDifficulty());
+        oldQuestion.setAlgorithmTag(questionEditDTO.getAlgorithmTag());
+        oldQuestion.setKnowledgeTags(questionEditDTO.getKnowledgeTags());
+        oldQuestion.setEstimatedMinutes(questionEditDTO.getEstimatedMinutes());
+        oldQuestion.setTrainingEnabled(questionEditDTO.getTrainingEnabled());
         oldQuestion.setTimeLimit(questionEditDTO.getTimeLimit());
         oldQuestion.setSpaceLimit(questionEditDTO.getSpaceLimit());
         oldQuestion.setContent(questionEditDTO.getContent());

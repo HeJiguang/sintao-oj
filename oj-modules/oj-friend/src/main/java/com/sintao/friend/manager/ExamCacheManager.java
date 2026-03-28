@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.github.pagehelper.PageHelper;
 import com.sintao.common.core.constants.CacheConstants;
 import com.sintao.common.core.constants.Constants;
 import com.sintao.common.core.enums.ExamListType;
@@ -20,7 +21,6 @@ import com.sintao.friend.domain.user.UserExam;
 import com.sintao.friend.mapper.exam.ExamMapper;
 import com.sintao.friend.mapper.exam.ExamQuestionMapper;
 import com.sintao.friend.mapper.user.UserExamMapper;
-import com.github.pagehelper.PageHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -64,20 +64,20 @@ public class ExamCacheManager {
 
     public List<ExamVO> getExamVOList(ExamQueryDTO examQueryDTO, Long userId) {
         int start = (examQueryDTO.getPageNum() - 1) * examQueryDTO.getPageSize();
-        int end = start + examQueryDTO.getPageSize() - 1; //下标需�?-1
+        int end = start + examQueryDTO.getPageSize() - 1;
         String examListKey = getExamListKey(examQueryDTO.getType(), userId);
         List<Long> examIdList = redisService.getCacheListByRange(examListKey, start, end, Long.class);
         List<ExamVO> examVOList = assembleExamVOList(examIdList);
         if (CollectionUtil.isEmpty(examVOList)) {
-            //说明redis中数据可能有问题 从数据库中查数据并且重新刷新缓存
-            examVOList = getExamListByDB(examQueryDTO, userId); //从数据库中获取数�?            refreshCache(examQueryDTO.getType(), userId);
+            examVOList = getExamListByDB(examQueryDTO, userId);
+            refreshCache(examQueryDTO.getType(), userId);
         }
         return examVOList;
     }
 
     public List<ExamRankVO> getExamRankList(ExamRankDTO examRankDTO) {
         int start = (examRankDTO.getPageNum() - 1) * examRankDTO.getPageSize();
-        int end = start + examRankDTO.getPageSize() - 1; //下标需�?-1
+        int end = start + examRankDTO.getPageSize() - 1;
         return redisService.getCacheListByRange(getExamRankListKey(examRankDTO.getExamId()), start, end, ExamRankVO.class);
     }
 
@@ -87,8 +87,9 @@ public class ExamCacheManager {
         if (CollectionUtil.isNotEmpty(userExamIdList)) {
             return userExamIdList;
         }
-        List<UserExam> userExamList =
-                userExamMapper.selectList(new LambdaQueryWrapper<UserExam>().eq(UserExam::getUserId, userId));
+        List<UserExam> userExamList = userExamMapper.selectList(
+                new LambdaQueryWrapper<UserExam>().eq(UserExam::getUserId, userId)
+        );
         if (CollectionUtil.isEmpty(userExamList)) {
             return null;
         }
@@ -122,18 +123,15 @@ public class ExamCacheManager {
         return redisService.indexForList(getExamQuestionListKey(examId), index + 1, Long.class);
     }
 
-    //刷新缓存逻辑
     public void refreshCache(Integer examListType, Long userId) {
         List<Exam> examList = new ArrayList<>();
         if (ExamListType.EXAM_UN_FINISH_LIST.getValue().equals(examListType)) {
-            //查询未完赛的竞赛列表
             examList = examMapper.selectList(new LambdaQueryWrapper<Exam>()
                     .select(Exam::getExamId, Exam::getTitle, Exam::getStartTime, Exam::getEndTime)
                     .gt(Exam::getEndTime, LocalDateTime.now())
                     .eq(Exam::getStatus, Constants.TRUE)
                     .orderByDesc(Exam::getCreateTime));
         } else if (ExamListType.EXAM_HISTORY_LIST.getValue().equals(examListType)) {
-            //查询历史竞赛
             examList = examMapper.selectList(new LambdaQueryWrapper<Exam>()
                     .select(Exam::getExamId, Exam::getTitle, Exam::getStartTime, Exam::getEndTime)
                     .le(Exam::getEndTime, LocalDateTime.now())
@@ -153,9 +151,9 @@ public class ExamCacheManager {
             examMap.put(getDetailKey(exam.getExamId()), exam);
             examIdList.add(exam.getExamId());
         }
-        redisService.multiSet(examMap);  //刷新详情缓存
+        redisService.multiSet(examMap);
         redisService.deleteObject(getExamListKey(examListType, userId));
-        redisService.rightPushAll(getExamListKey(examListType, userId), examIdList);      //刷新列表缓存
+        redisService.rightPushAll(getExamListKey(examListType, userId), examIdList);
     }
 
     public void refreshExamQuestionCache(Long examId) {
@@ -168,9 +166,10 @@ public class ExamCacheManager {
         }
         List<Long> examQuestionIdList = examQuestionList.stream().map(ExamQuestion::getQuestionId).toList();
         redisService.rightPushAll(getExamQuestionListKey(examId), examQuestionIdList);
-        //节省 redis缓存资源
-        long seconds = ChronoUnit.SECONDS.between(LocalDateTime.now(),
-                LocalDateTime.now().plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0));
+        long seconds = ChronoUnit.SECONDS.between(
+                LocalDateTime.now(),
+                LocalDateTime.now().plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
+        );
         redisService.expire(getExamQuestionListKey(examId), seconds, TimeUnit.SECONDS);
     }
 
@@ -185,27 +184,25 @@ public class ExamCacheManager {
     private List<ExamVO> getExamListByDB(ExamQueryDTO examQueryDTO, Long userId) {
         PageHelper.startPage(examQueryDTO.getPageNum(), examQueryDTO.getPageSize());
         if (ExamListType.USER_EXAM_LIST.getValue().equals(examQueryDTO.getType())) {
-            //查询我的竞赛列表
             return userExamMapper.selectUserExamList(userId);
-        } else {
-            //查询C端的竞赛列表
-            return examMapper.selectExamList(examQueryDTO);
         }
+        return examMapper.selectExamList(examQueryDTO);
     }
 
     private List<ExamVO> assembleExamVOList(List<Long> examIdList) {
         if (CollectionUtil.isEmpty(examIdList)) {
-            //说明redis当中没数�?从数据库中查数据并且重新刷新缓存
             return null;
         }
-        //拼接redis当中key的方�?并且将拼接好的key存储到一个list�?        List<String> detailKeyList = new ArrayList<>();
+        List<String> detailKeyList = new ArrayList<>();
         for (Long examId : examIdList) {
             detailKeyList.add(getDetailKey(examId));
         }
         List<ExamVO> examVOList = redisService.multiGet(detailKeyList, ExamVO.class);
+        if (CollectionUtil.isEmpty(examVOList)) {
+            return null;
+        }
         CollUtil.removeNull(examVOList);
         if (CollectionUtil.isEmpty(examVOList) || examVOList.size() != examIdList.size()) {
-            //说明redis中数据有问题 从数据库中查数据并且重新刷新缓存
             return null;
         }
         return examVOList;
@@ -214,11 +211,11 @@ public class ExamCacheManager {
     private String getExamListKey(Integer examListType, Long userId) {
         if (ExamListType.EXAM_UN_FINISH_LIST.getValue().equals(examListType)) {
             return CacheConstants.EXAM_UNFINISHED_LIST;
-        } else if (ExamListType.EXAM_HISTORY_LIST.getValue().equals(examListType)) {
-            return CacheConstants.EXAM_HISTORY_LIST;
-        } else {
-            return CacheConstants.USER_EXAM_LIST + userId;
         }
+        if (ExamListType.EXAM_HISTORY_LIST.getValue().equals(examListType)) {
+            return CacheConstants.EXAM_HISTORY_LIST;
+        }
+        return CacheConstants.USER_EXAM_LIST + userId;
     }
 
     private String getDetailKey(Long examId) {

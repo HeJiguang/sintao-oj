@@ -1,2 +1,1 @@
-com.bite.common.redis.config.RedisConfig
-com.bite.common.redis.service.RedisService
+com.sintao.common.redis.config.RedisConfig

@@ -48,12 +48,26 @@
         </dependency>
         <dependency>
             <groupId>com.sintao</groupId>
+            <artifactId>oj-common-redis</artifactId>
+            <version>${oj-common-redis.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sintao</groupId>
             <artifactId>oj-common-swagger</artifactId>
             <version>${oj-common-swagger.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
