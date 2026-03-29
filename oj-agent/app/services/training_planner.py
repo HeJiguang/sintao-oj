@@ -333,9 +333,7 @@ def _normalize_llm_plan(
 
 
 def build_training_plan(request: TrainingPlanRequest) -> TrainingPlanResponse:
-    heuristic_plan = _build_heuristic_training_plan(request)
-    try:
-        llm_payload = _generate_plan_with_llm(request, heuristic_plan)
-        return _normalize_llm_plan(request, heuristic_plan, llm_payload)
-    except Exception:
-        return heuristic_plan
+    from app.graphs.capabilities.plan_graph import build_plan_graph
+
+    result = build_plan_graph().invoke({"request": request})
+    return result["response"]

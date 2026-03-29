@@ -11,6 +11,15 @@ if str(PROJECT_ROOT) not in sys.path:
 
 
 from app.main import app  # noqa: E402
+from app.runtime.enums import RiskLevel, RunStatus, TaskType  # noqa: E402
+from app.runtime.models import (  # noqa: E402
+    EvidenceState,
+    ExecutionState,
+    GuardrailState,
+    OutcomeState,
+    RequestContext,
+    UnifiedAgentState,
+)
 from app.services.conversation_memory import conversation_memory_store  # noqa: E402
 
 
@@ -164,6 +173,60 @@ def test_chat_accepts_gateway_headers_and_camel_case_payload(monkeypatch):
     assert payload["next_action"] == "Keep tracing the smallest failing input."
 
 
+def test_chat_sync_uses_runtime_engine(monkeypatch):
+    import app.api.chat as chat_module  # noqa: WPS433
+
+    monkeypatch.setattr(
+        chat_module,
+        "execute_chat_request",
+        lambda request, headers: UnifiedAgentState(
+            request=RequestContext(
+                trace_id="trace-runtime-sync",
+                user_id="u-9",
+                task_type=TaskType.CHAT,
+                user_message=request.user_message,
+            ),
+            execution=ExecutionState(
+                run_id="run-runtime-sync",
+                graph_name="supervisor_graph",
+                status=RunStatus.SUCCEEDED,
+                active_node="chat_capability",
+            ),
+            evidence=EvidenceState(),
+            guardrail=GuardrailState(
+                risk_level=RiskLevel.LOW,
+                completeness_ok=True,
+                policy_ok=True,
+            ),
+            outcome=OutcomeState(
+                intent="analyze_failure",
+                answer="Runtime answer",
+                confidence=0.95,
+                next_action="Runtime next action",
+            ),
+        ),
+        raising=False,
+    )
+
+    response = client.post(
+        "/api/chat",
+        headers={
+            "X-User-Id": "u-9",
+        },
+        json={
+            "questionTitle": "Two Sum",
+            "userMessage": "Why is this still wrong?",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["answer"] == "Runtime answer"
+    assert payload["intent"] == "analyze_failure"
+    assert payload["confidence"] == 0.95
+    assert payload["next_action"] == "Runtime next action"
+
+
 def test_chat_detail_returns_same_shape_as_chat(monkeypatch):
     from app.services import chat_assistant  # noqa: WPS433
 
@@ -233,3 +296,28 @@ def test_chat_stream_emits_delta_events_for_incremental_llm_output(monkeypatch):
     assert '"answer":"Hel"' in response.text
     assert '"answer":"Hello"' in response.text
     assert "event: final" in response.text
+
+
+def test_chat_stream_uses_runtime_streaming(monkeypatch):
+    import app.api.chat as chat_module  # noqa: WPS433
+
+    monkeypatch.setattr(
+        chat_module,
+        "stream_chat_request",
+        lambda request, headers: iter(
+            [
+                'event: final\ndata: {"answer":"Runtime stream answer","confidence":0.81,"next_action":"Keep tracing the failing sample."}\n\n'
+            ]
+        ),
+    )
+
+    response = client.post(
+        "/api/chat/stream",
+        json={
+            "questionTitle": "Two Sum",
+            "userMessage": "Help me look.",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Runtime stream answer" in response.text
