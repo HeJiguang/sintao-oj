@@ -158,8 +158,11 @@ jobs:
           host: ${{ secrets.SWARM_MANAGER_HOST }}
           username: ${{ secrets.SWARM_MANAGER_USER }}
           password: ${{ secrets.SWARM_MANAGER_PASSWORD }}
-          source: "deploy"
+          source: "deploy/swarm,deploy/docker,deploy/dev/sql/init.sql,deploy/dev/sql/2026-03-25-phase1-email-login-user-column-fix.sql,deploy/dev/sql/2026-03-25-phase1-learning-platform-mvp.sql,deploy/dev/sql/2026-03-26-rabbitmq-user-submit-reliability.sql,deploy/dev/sql/2026-03-30-notice-and-judge-history-enhancements.sql"
           target: "${{ secrets.SWARM_DEPLOY_PATH }}"
+          timeout: "5m"
+          command_timeout: "20m"
+          overwrite: true
       - name: Deploy stacks on manager
         uses: appleboy/ssh-action@v1.2.0
         env:
