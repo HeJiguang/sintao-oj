@@ -182,6 +182,8 @@ jobs:
             "ghcr.io/${GHCR_NAMESPACE}/syncode-judge:${IMAGE_TAG}" \
             "ghcr.io/${GHCR_NAMESPACE}/syncode-oj-agent:${IMAGE_TAG}" \
             -o deploy-bundles/runtime-images.tar
+
+          chmod 644 deploy-bundles/runtime-images.tar
       - name: Copy deployment assets to manager
         uses: appleboy/scp-action@v0.1.7
         with:
