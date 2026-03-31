@@ -3,7 +3,13 @@ import type { CodeLanguage, Difficulty } from "./contracts";
 export const DEFAULT_BACKEND_BASE_URL = "http://localhost:19090";
 
 export function resolveBackendBaseUrl(
-  baseUrl = process.env.NEXT_PUBLIC_BACKEND_BASE_URL ?? process.env.SYNCODE_BACKEND_BASE_URL ?? DEFAULT_BACKEND_BASE_URL
+  baseUrl = typeof window === "undefined"
+    ? process.env.SYNCODE_BACKEND_BASE_URL ??
+      process.env.NEXT_PUBLIC_BACKEND_BASE_URL ??
+      DEFAULT_BACKEND_BASE_URL
+    : process.env.NEXT_PUBLIC_BACKEND_BASE_URL ??
+      process.env.SYNCODE_BACKEND_BASE_URL ??
+      DEFAULT_BACKEND_BASE_URL
 ) {
   return baseUrl.replace(/\/+$/, "");
 }

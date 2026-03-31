@@ -1,34 +1,26 @@
-version: '3.8'
-
 services:
   oj-mysql-server:
-      image: mysql:5.7
-      container_name: oj-mysql-server
-      environment:
-        # 时区上海
-        TZ: Asia/Shanghai
-        # root 密码
-        MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-local}
-      ports:
-        - "3306:3306"
-      volumes:
-        # 数据挂载
-        - ./mysql/mysqldata/:/var/lib/mysql/
-      # 配置MySQL 服务器的字符集与排序规则
-      command:
-        --character-set-server=utf8mb4
-        --collation-server=utf8mb4_general_ci
-      # 通过执行特定的 MySQL 命令来检查服务的健康状态
-      healthcheck:
-        test: ["CMD", "mysqladmin", "ping", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-change-me-local}"]
-        interval: 10s
-        timeout: 5s
-        retries: 10
+    image: mysql:5.7
+    container_name: oj-mysql-server
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-local}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/mysqldata/:/var/lib/mysql/
+    command:
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-change-me-local}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   oj-nacos-server:
-    image: nacos/nacos-server:v2.2.2  # 替换为nacos的Docker镜像名及版本
+    image: nacos/nacos-server:v2.2.2
     container_name: oj-nacos-server
-    # 设置 Nacos 的运行模式为独立模式，限制了 Java 虚拟机的内存使用，并指定连接到 oj-mysql-server 数据库的信息
     environment:
       - MODE=standalone
       - JVM_XMS=256m
@@ -41,7 +33,6 @@ services:
       - MYSQL_SERVICE_PASSWORD=${MYSQL_SERVICE_PASSWORD:-change-me-local}
     volumes:
       - ./nacos/conf/application.properties:/home/nacos/conf/application.properties
-    # 将容器的 8848 和 9848 端口映射到主机的对应端口
     ports:
       - "8848:8848"
       - "9848:9848"
@@ -49,7 +40,7 @@ services:
       oj-mysql-server:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8848/nacos" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos"]
       interval: 30s
       timeout: 10s
       retries: 10
@@ -57,15 +48,12 @@ services:
   oj-xxl-job-server:
     container_name: oj-xxl-job-server
     image: xuxueli/xxl-job-admin:2.4.0
-    # 设置连接MySQL的URL、用户名和密码等配置。
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://oj-mysql-server:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
       - SPRING_DATASOURCE_USERNAME=ojtest
       - SPRING_DATASOURCE_PASSWORD=${MYSQL_SERVICE_PASSWORD:-change-me-local}
-    # 假设xxl-job监听在8080端口
     ports:
       - "8080:8080"
-    # 依赖于 oj-mysql-server 服务，并在其状态为健康时启动。
     depends_on:
       oj-mysql-server:
         condition: service_healthy
@@ -77,18 +65,16 @@ services:
       - "6379:6379"
     volumes:
       - ./redis/data:/data
-    # 设置 Redis 的访问密码。
     environment:
       REQUIREPASS: ${REDIS_PASSWORD:-change-me-local}
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 10
 
   oj-gateway:
     image: bit/oj-gateway:0.0.1-SNAPSHOT
-    # 提供了构建上下文的路径。这意味着Docker将在./bitoj-jar/gateway/目录中寻找构建所需的文件。
     build:
       context: ./bitoj-jar/gateway/
     container_name: oj-gateway
@@ -105,45 +91,84 @@ services:
       oj-redis-server:
         condition: service_healthy
 
+  syncode-app:
+    build:
+      context: ../..
+      dockerfile: deploy/test/frontend/app.Dockerfile
+    container_name: syncode-app
+    environment:
+      TZ: Asia/Shanghai
+      SYNCODE_BACKEND_BASE_URL: http://oj-gateway:19090
+      NEXT_PUBLIC_BACKEND_BASE_URL: ${NEXT_PUBLIC_BACKEND_BASE_URL:-http://localhost:19090}
+    ports:
+      - "4001:4001"
+    depends_on:
+      oj-gateway:
+        condition: service_started
+
+  syncode-admin:
+    build:
+      context: ../..
+      dockerfile: deploy/test/frontend/admin.Dockerfile
+    container_name: syncode-admin
+    environment:
+      TZ: Asia/Shanghai
+      SYNCODE_BACKEND_BASE_URL: http://oj-gateway:19090
+      NEXT_PUBLIC_BACKEND_BASE_URL: ${NEXT_PUBLIC_BACKEND_BASE_URL:-http://localhost:19090}
+    ports:
+      - "4002:4002"
+    depends_on:
+      oj-gateway:
+        condition: service_started
+
+  syncode-web:
+    build:
+      context: ../..
+      dockerfile: deploy/test/frontend/web.Dockerfile
+    container_name: syncode-web
+    environment:
+      TZ: Asia/Shanghai
+      APP_URL: http://syncode-app:4001
+      ADMIN_URL: http://syncode-admin:4002
+    ports:
+      - "4000:4000"
+    depends_on:
+      syncode-app:
+        condition: service_started
+      syncode-admin:
+        condition: service_started
+
   oj-nginx-server:
-    # 使用 nginx:1.21 镜像。
     image: nginx:1.21
-    # 容器名称为 oj-nginx-server
     container_name: oj-nginx-server
     volumes:
-      # 配置文件挂载
       - ./nginx/conf/default.conf:/etc/nginx/conf.d/default.conf
-      # 前端项目部署核心步骤。这可以用于将一些静态资源（如网页、文件、图片等）从本地主机挂载到容器中，供 Nginx 进行服务。
-      - ./nginx/dist:/home/dist
     environment:
-      # 时区上海
       TZ: Asia/Shanghai
-    # 端口映射
     ports:
       - "80:80"
       - "10030:10030"
       - "443:443"
     privileged: true
-    # 表示此服务依赖于 oj-gateway 服务，即 oj-gateway 服务启动后才会启动此服务。
     depends_on:
       - oj-gateway
+      - syncode-web
+      - syncode-app
+      - syncode-admin
 
   oj-elasticsearch-server:
     container_name: oj-elasticsearch-server
     image: elasticsearch:8.5.3
     ports:
       - "9200:9200"
-    # 挂载本地目录用于存储 Elasticsearch的数据、插件。
     volumes:
       - ./elasticsearch/es-plugins:/usr/share/elasticsearch/plugins
-    # 设置为单节点模式，并限制 Java 虚拟机的内存使用。暂时禁用了Elasticsearch的安全特性
     environment:
       discovery.type: single-node
       ES_JAVA_OPTS: "-Xms256m -Xmx256m"
       xpack.security.enabled: false
-    # 通过执行 curl 命令检查 Elasticsearch 的集群健康状态。
     healthcheck:
-      test: [ "CMD", "curl", "-s", "http://localhost:9200/_cluster/health?wait_for_status=green&timeout=1s" ]
+      test: ["CMD", "curl", "-s", "http://localhost:9200/_cluster/health?wait_for_status=green&timeout=1s"]
       interval: 30s
       timeout: 5s
       retries: 10
@@ -165,11 +190,9 @@ services:
     container_name: oj-kibana-server
     ports:
       - "10010:5601"
-    # 依赖于 oj-elasticsearch-server 服务，并在其健康时启动。
     depends_on:
       oj-elasticsearch-server:
         condition: service_healthy
-    # 设置系统语言为中文，并指定连接到 Elasticsearch 的 URL
     environment:
       I18N_LOCALE: zh-CN
       ELASTICSEARCH_URL: http://elasticsearch:9200
@@ -182,12 +205,11 @@ services:
       - "10020:15672"
     volumes:
       - ./rabbit/data:/var/lib/rabbitmq
-    # 设置 RabbitMQ 的默认用户名和密码。
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
     healthcheck:
-      test: [ "CMD", "rabbitmqctl", "status" ]
+      test: ["CMD", "rabbitmqctl", "status"]
       interval: 30s
       timeout: 10s
       retries: 10

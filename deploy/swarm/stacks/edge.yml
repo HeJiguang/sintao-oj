@@ -2,6 +2,7 @@ services:
   web:
     image: ghcr.io/hejiguang/syncode-web:${IMAGE_TAG:-main}
     environment:
+      APP_NAME: web
       APP_URL: http://app:3000
       ADMIN_URL: http://admin:3000
     networks:
@@ -21,6 +22,7 @@ services:
   app:
     image: ghcr.io/hejiguang/syncode-app:${IMAGE_TAG:-main}
     environment:
+      APP_NAME: app
       NEXT_PUBLIC_BACKEND_BASE_URL: http://syncode-gateway:19090
       SYNCODE_BACKEND_BASE_URL: http://syncode-gateway:19090
     networks:
@@ -34,6 +36,7 @@ services:
   admin:
     image: ghcr.io/hejiguang/syncode-admin:${IMAGE_TAG:-main}
     environment:
+      APP_NAME: admin
       NEXT_PUBLIC_BACKEND_BASE_URL: http://syncode-gateway:19090
       SYNCODE_BACKEND_BASE_URL: http://syncode-gateway:19090
     networks:

@@ -11,7 +11,12 @@ async function withMockFetch(
   const originalFetch = globalThis.fetch;
 
   globalThis.fetch = (async (input) => {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
     const payload = resolver(url);
     return new Response(JSON.stringify(payload), {
       status: 200,
@@ -26,6 +31,73 @@ async function withMockFetch(
   }
 }
 
+async function withRejectingFetch(error: Error, run: () => Promise<void>) {
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = (async () => {
+    throw error;
+  }) as typeof fetch;
+
+  try {
+    await run();
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+async function withPatchedEnv(
+  values: Record<string, string | undefined>,
+  run: () => Promise<void>
+) {
+  const previous = Object.fromEntries(
+    Object.keys(values).map((key) => [key, process.env[key]])
+  );
+
+  for (const [key, value] of Object.entries(values)) {
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
+
+  try {
+    await run();
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  }
+}
+
+async function withWindowValue(value: unknown, run: () => Promise<void>) {
+  const globalWithWindow = globalThis as typeof globalThis & {
+    window?: unknown;
+  };
+  const hadWindow = "window" in globalWithWindow;
+  const previousWindow = globalWithWindow.window;
+
+  if (value === undefined) {
+    delete globalWithWindow.window;
+  } else {
+    globalWithWindow.window = value;
+  }
+
+  try {
+    await run();
+  } finally {
+    if (hadWindow) {
+      globalWithWindow.window = previousWindow;
+    } else {
+      delete globalWithWindow.window;
+    }
+  }
+}
+
 async function main() {
   const problems = await api.getProblemList();
   const detail = await api.getProblemDetail("1");
@@ -35,10 +107,23 @@ async function main() {
   assert.equal(typeof api.getHotProblemList, "function");
   assert.equal(typeof api.getPublicMessages, "function");
 
-  assert.equal(api.resolveBackendBaseUrl("http://localhost:19090/"), "http://localhost:19090");
-  assert.equal(api.resolveJudgeWebSocketUrl("http://localhost:19090"), "ws://localhost:19090/friend/ws/judge/result");
-  assert.equal(api.unwrapData({ code: 1000, msg: "ok", data: { ok: true } }).ok, true);
-  assert.equal(api.unwrapTable({ code: 1000, msg: "ok", rows: [1, 2], total: 2 }).rows.length, 2);
+  assert.equal(
+    api.resolveBackendBaseUrl("http://localhost:19090/"),
+    "http://localhost:19090"
+  );
+  assert.equal(
+    api.resolveJudgeWebSocketUrl("http://localhost:19090"),
+    "ws://localhost:19090/friend/ws/judge/result"
+  );
+  assert.equal(
+    api.unwrapData({ code: 1000, msg: "ok", data: { ok: true } }).ok,
+    true
+  );
+  assert.equal(
+    api.unwrapTable({ code: 1000, msg: "ok", rows: [1, 2], total: 2 }).rows
+      .length,
+    2
+  );
   assert.equal(api.normalizeDifficulty(1), "Easy");
   assert.equal(api.normalizeDifficulty(2), "Medium");
   assert.equal(api.normalizeDifficulty(3), "Hard");
@@ -46,6 +131,39 @@ async function main() {
   assert.equal(api.programTypeFromLanguage("cpp"), 1);
   assert.equal(api.programTypeFromLanguage("go"), 2);
   assert.equal(api.isJudgeLanguageSupported("python"), false);
+
+  await withPatchedEnv(
+    {
+      NEXT_PUBLIC_BACKEND_BASE_URL: "http://public.example:19090",
+      SYNCODE_BACKEND_BASE_URL: "http://internal.example:19090"
+    },
+    async () => {
+      await withWindowValue(undefined, async () => {
+        assert.equal(
+          api.resolveBackendBaseUrl(),
+          "http://internal.example:19090"
+        );
+      });
+
+      await withWindowValue({}, async () => {
+        assert.equal(
+          api.resolveBackendBaseUrl(),
+          "http://public.example:19090"
+        );
+      });
+    }
+  );
+
+  await withRejectingFetch(new Error("network down"), async () => {
+    await assert.rejects(
+      () => api.getProblemDetail("two-sum", "user-token"),
+      /network down/
+    );
+    await assert.rejects(
+      () => api.getExamDetail("exam-sprint-01", "user-token"),
+      /network down/
+    );
+  });
 
   await withMockFetch(
     (url) => {

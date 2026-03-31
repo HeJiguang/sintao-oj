@@ -9,7 +9,7 @@ import { getServerAccessToken } from "../../../../lib/server-auth";
 export async function GET(request: NextRequest) {
   const token = await getServerAccessToken();
   if (!token) {
-    return NextResponse.json({ message: "鏈櫥褰曪紝鏃犳硶璇诲彇鎻愪氦璁板綍銆?" }, { status: 401 });
+    return NextResponse.json({ message: "未登录，无法读取提交记录。" }, { status: 401 });
   }
 
   const questionId = request.nextUrl.searchParams.get("questionId");

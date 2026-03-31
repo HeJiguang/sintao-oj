@@ -28,12 +28,12 @@ export default function LoginPage() {
 
       const payload = await response.json();
       if (!response.ok) {
-        throw new Error(payload.message ?? "楠岃瘉鐮佸彂閫佸け璐ャ€?");
+        throw new Error(payload.message ?? "发送验证码失败。");
       }
 
-      setStatus("楠岃瘉鐮佸凡鍙戦€侊紝璇锋鏌ラ偖绠便€?");
+      setStatus("验证码已发送，请检查邮箱。");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "楠岃瘉鐮佸彂閫佸け璐ャ€?");
+      setStatus(error instanceof Error ? error.message : "发送验证码失败。");
     } finally {
       setLoading(false);
     }
@@ -52,14 +52,14 @@ export default function LoginPage() {
 
       const payload = await response.json();
       if (!response.ok) {
-        throw new Error(payload.message ?? "鐧诲綍澶辫触銆?");
+        throw new Error(payload.message ?? "登录失败。");
       }
 
       setBrowserAccessToken(payload.token);
       router.push(appInternalPath("/"));
       router.refresh();
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "鐧诲綍澶辫触銆?");
+      setStatus(error instanceof Error ? error.message : "登录失败。");
     } finally {
       setLoading(false);
     }
@@ -72,10 +72,10 @@ export default function LoginPage() {
           <div>
             <p className="kicker">SynCode</p>
             <h1 className="mt-3 max-w-xl text-5xl font-semibold leading-tight tracking-[-0.04em]">
-              鐧诲綍鐪熷疄鍚庣鐜
+              登录真实后端环境
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--text-secondary)]">
-              褰撳墠鐧诲綍鐩存帴杩炴帴鍒?`http://localhost:19090`銆傝緭鍏ラ偖绠卞悗鍏堝彂閫侀獙璇佺爜锛屽啀鐢ㄩ偖绠遍獙璇佺爜鐧诲綍銆?
+              当前登录会直接连接真实后端服务。输入邮箱后先发送验证码，再使用邮箱验证码登录。
             </p>
           </div>
         </Panel>
@@ -83,23 +83,23 @@ export default function LoginPage() {
         <Panel className="flex items-center justify-center p-6 md:p-10">
           <div className="w-full max-w-[460px]">
             <p className="kicker">Sign In</p>
-            <h2 className="mt-3 text-3xl font-semibold">鐧诲綍 SynCode</h2>
+            <h2 className="mt-3 text-3xl font-semibold">登录 SynCode</h2>
             <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
-              浣跨敤閭楠岃瘉鐮佽繘鍏ュ伐浣滃彴銆傛湭鐧诲綍鏃剁郴缁熶細鎸佺画鎻愮ず褰撳墠姝ｅ湪浣跨敤婕旂ず鏁版嵁銆?
+              使用邮箱验证码进入工作台。未登录时系统会持续提示当前正在使用演示数据。
             </p>
 
             <div className="mt-6 space-y-4">
-              <Input placeholder="杈撳叆閭鍦板潃" value={email} onChange={(event) => setEmail(event.target.value)} />
+              <Input placeholder="输入邮箱地址" value={email} onChange={(event) => setEmail(event.target.value)} />
 
               <div className="grid gap-3 md:grid-cols-[1fr_120px]">
-                <Input placeholder="杈撳叆楠岃瘉鐮?" value={code} onChange={(event) => setCode(event.target.value)} />
+                <Input placeholder="输入验证码" value={code} onChange={(event) => setCode(event.target.value)} />
                 <Button disabled={loading || !email} variant="secondary" onClick={sendCode}>
-                  鍙戦€侀獙璇佺爜
+                  发送验证码
                 </Button>
               </div>
 
               <Button className="w-full" disabled={loading || !email || !code} size="lg" onClick={login}>
-                鐧诲綍
+                登录
               </Button>
 
               {status ? <p className="text-sm text-[var(--text-secondary)]">{status}</p> : null}

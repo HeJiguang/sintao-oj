@@ -15,6 +15,7 @@ FROM node:22-bookworm-slim
 ARG APP_NAME
 
 ENV NODE_ENV=production
+ENV APP_NAME=${APP_NAME}
 
 WORKDIR /app/frontend
 COPY --from=build /workspace/frontend /app/frontend

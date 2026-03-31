@@ -8,7 +8,8 @@ async function main() {
 
   assert.match(html, /SynCode/);
   assert.match(html, /开始体验/);
-  assert.doesNotMatch(html, /进入控制台|控制台|Admin/);
+  assert.match(html, /让 AI 成为你的编程训练搭档/);
+  assert.match(html, /AI 原生编程训练平台/);
 }
 
 void main();

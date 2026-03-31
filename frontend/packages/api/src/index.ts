@@ -47,8 +47,12 @@ export async function getHotProblemList(): Promise<QuestionListItem[]> {
 }
 
 export async function getProblemDetail(questionId: string, token?: string | null): Promise<QuestionDetail> {
+  if (token) {
+    return fetchLiveProblemDetail(questionId, token);
+  }
+
   try {
-    return await fetchLiveProblemDetail(questionId, token);
+    return await fetchLiveProblemDetail(questionId);
   } catch {
     return questionDetails[questionId] ?? questionDetails["two-sum"];
   }
@@ -73,12 +77,11 @@ export async function getExamList(): Promise<ExamSummary[]> {
 }
 
 export async function getExamDetail(examId: string, token?: string | null): Promise<ExamDetail> {
-  if (!token) return getExamMockFallback(examId);
-  try {
-    return await fetchLiveExamDetail(examId, token);
-  } catch {
-    return getExamMockFallback(examId);
+  if (token) {
+    return fetchLiveExamDetail(examId, token);
   }
+
+  return getExamMockFallback(examId);
 }
 
 export async function getUserProfile(token?: string | null): Promise<UserProfile> {

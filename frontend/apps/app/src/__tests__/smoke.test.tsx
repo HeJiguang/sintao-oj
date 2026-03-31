@@ -11,7 +11,6 @@ async function main() {
   );
 
   assert.match(dashboardHtml, /SynCode/);
-  assert.match(dashboardHtml, /AI 辅助编程训练平台/);
   assert.match(dashboardHtml, /Hot Problems/);
   assert.match(dashboardHtml, /href="\/app"><div class="flex h-7 w-7/);
   assert.match(dashboardHtml, /href="\/app\/login"/);

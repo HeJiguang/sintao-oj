@@ -39,11 +39,11 @@ export function TrainingActions({ direction, tasks }: TrainingActionsProps) {
       });
       const payload = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) {
-        throw new Error(payload?.message ?? "璁粌璁″垝鐢熸垚澶辫触銆?");
+        throw new Error(payload?.message ?? "生成训练计划失败。");
       }
       window.location.reload();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "璁粌璁″垝鐢熸垚澶辫触銆?");
+      setMessage(error instanceof Error ? error.message : "生成训练计划失败。");
     } finally {
       setLoadingKey(null);
     }
@@ -61,11 +61,11 @@ export function TrainingActions({ direction, tasks }: TrainingActionsProps) {
       });
       const payload = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) {
-        throw new Error(payload?.message ?? "璁粌浠诲姟鏇存柊澶辫触銆?");
+        throw new Error(payload?.message ?? "完成训练任务失败。");
       }
       window.location.reload();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "璁粌浠诲姟鏇存柊澶辫触銆?");
+      setMessage(error instanceof Error ? error.message : "完成训练任务失败。");
     } finally {
       setLoadingKey(null);
     }
@@ -76,10 +76,10 @@ export function TrainingActions({ direction, tasks }: TrainingActionsProps) {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="kicker">Actions</p>
-          <h3 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">璁粌鍔ㄤ綔</h3>
+          <h3 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">训练动作</h3>
         </div>
         <Button data-testid="training-generate" onClick={() => void generatePlan()} disabled={loadingKey === "generate"}>
-          {loadingKey === "generate" ? "鐢熸垚涓?.." : "閲嶆柊鐢熸垚璁″垝"}
+          {loadingKey === "generate" ? "生成中..." : "生成训练计划"}
         </Button>
       </div>
 
@@ -99,7 +99,7 @@ export function TrainingActions({ direction, tasks }: TrainingActionsProps) {
                       href={href}
                       className="inline-flex h-9 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border-strong)] bg-[var(--surface-2)] px-4 text-sm font-medium text-[var(--text-primary)]"
                     >
-                      杩涘叆浠诲姟
+                      进入任务
                     </a>
                   ) : null}
                   {task.rawStatus === TASK_STATUS_PENDING ? (
@@ -109,7 +109,7 @@ export function TrainingActions({ direction, tasks }: TrainingActionsProps) {
                       onClick={() => void finishTask(task.taskId)}
                       disabled={loadingKey === task.taskId}
                     >
-                      {loadingKey === task.taskId ? "鎻愪氦涓?.." : "瀹屾垚浠诲姟"}
+                      {loadingKey === task.taskId ? "提交中..." : "标记完成"}
                     </Button>
                   ) : null}
                 </div>

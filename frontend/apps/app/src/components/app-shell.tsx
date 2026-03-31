@@ -41,20 +41,20 @@ export function AppShell({ children, rail, immersive, demoMode = false }: AppShe
             <a href={`${appPublicPath("/")}#announcements`}>
               <Button size="sm" variant="ghost">
                 <BellDot size={14} className="text-[var(--text-muted)]" />
-                <span className="ml-0.5">鍏憡</span>
+                <span className="ml-0.5">公告</span>
               </Button>
             </a>
             <a href={appPublicPath("/settings")}>
               <Button size="sm" variant="ghost">
                 <Settings size={14} className="text-[var(--text-muted)]" />
-                <span className="ml-0.5">涓汉璁剧疆</span>
+                <span className="ml-0.5">设置</span>
               </Button>
             </a>
             {demoMode ? (
               <a href={appPublicPath("/login")}>
                 <Button size="sm" variant="secondary" className="font-medium">
                   <LogIn size={14} className="text-[var(--text-secondary)]" />
-                  <span className="ml-1">鐧诲綍</span>
+                  <span className="ml-1">登录</span>
                 </Button>
               </a>
             ) : null}
@@ -67,10 +67,11 @@ export function AppShell({ children, rail, immersive, demoMode = false }: AppShe
         <div className="border-b border-[var(--border-soft)] bg-[var(--surface-2)]/80 backdrop-blur-md">
           <div className={`mx-auto flex items-center justify-between gap-4 px-6 py-3 ${immersive ? "w-full" : "max-w-[1720px]"}`}>
             <p className="text-sm leading-6 text-[var(--text-secondary)]">
-              褰撳墠鏈櫥褰曪紝姝ｅ湪灞曠ず鍏紑鍐呭涓庢紨绀烘暟鎹€傜櫥褰曞悗鍙娇鐢ㄧ湡瀹為鐩鎯呫€佺郴缁熷叕鍛娿€佽缁冭鍒掋€佸垽棰樻彁浜ゃ€乄ebSocket 瀹炴椂缁撴灉鍜?AI 娴佸紡鑳藉姏銆?
+              当前未登录，正在展示公开内容与演示数据。登录后可使用真实题目详情、系统公告、训练计划、判题提交、WebSocket
+              实时结果和 AI 流式能力。
             </p>
             <a href={appPublicPath("/login")} className="shrink-0">
-              <Button size="sm">绔嬪嵆鐧诲綍</Button>
+              <Button size="sm">立即登录</Button>
             </a>
           </div>
         </div>

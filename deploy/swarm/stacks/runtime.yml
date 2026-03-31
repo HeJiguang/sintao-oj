@@ -6,14 +6,18 @@ x-runtime-deploy: &runtime-deploy
   restart_policy:
     condition: on-failure
 
+x-java-runtime-env: &java-runtime-env
+  TZ: Asia/Shanghai
+  HOST_IP: ${RUNTIME_HOST_IP:-127.0.0.1}
+  NACOS_SERVER_ADDR: http://syncode-nacos:8848
+  SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+  JAVA_OPTS: "${JAVA_OPTS:--Xms256m -Xmx512m -XX:MaxMetaspaceSize=256m -Duser.timezone=Asia/Shanghai}"
+
 services:
   gateway:
     image: ghcr.io/hejiguang/syncode-gateway:${IMAGE_TAG:-main}
     environment:
-      TZ: Asia/Shanghai
-      HOST_IP: ${RUNTIME_HOST_IP:-127.0.0.1}
-      NACOS_SERVER_ADDR: http://syncode-nacos:8848
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      <<: *java-runtime-env
     ports:
       - target: 19090
         published: 19090
@@ -29,10 +33,7 @@ services:
   friend:
     image: ghcr.io/hejiguang/syncode-friend:${IMAGE_TAG:-main}
     environment:
-      TZ: Asia/Shanghai
-      HOST_IP: ${RUNTIME_HOST_IP:-127.0.0.1}
-      NACOS_SERVER_ADDR: http://syncode-nacos:8848
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      <<: *java-runtime-env
     ports:
       - target: 9202
         published: 9202
@@ -46,10 +47,7 @@ services:
   system:
     image: ghcr.io/hejiguang/syncode-system:${IMAGE_TAG:-main}
     environment:
-      TZ: Asia/Shanghai
-      HOST_IP: ${RUNTIME_HOST_IP:-127.0.0.1}
-      NACOS_SERVER_ADDR: http://syncode-nacos:8848
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      <<: *java-runtime-env
     ports:
       - target: 9201
         published: 9201
@@ -63,10 +61,7 @@ services:
   judge:
     image: ghcr.io/hejiguang/syncode-judge:${IMAGE_TAG:-main}
     environment:
-      TZ: Asia/Shanghai
-      HOST_IP: ${RUNTIME_HOST_IP:-127.0.0.1}
-      NACOS_SERVER_ADDR: http://syncode-nacos:8848
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      <<: *java-runtime-env
     ports:
       - target: 9204
         published: 9204
