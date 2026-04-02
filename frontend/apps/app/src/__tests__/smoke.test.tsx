@@ -11,13 +11,13 @@ async function main() {
   );
 
   assert.match(dashboardHtml, /SynCode/);
-  assert.match(dashboardHtml, /Hot Problems/);
+  assert.match(dashboardHtml, /今日工作台/);
   assert.match(dashboardHtml, /href="\/app"><div class="flex h-7 w-7/);
   assert.match(dashboardHtml, /href="\/app\/login"/);
 
   assert.match(workspaceHtml, /SynCode/);
-  assert.match(workspaceHtml, /Agent Runtime/);
-  assert.match(workspaceHtml, /Heat 98/);
+  assert.match(workspaceHtml, /题目说明/);
+  assert.match(workspaceHtml, /热度 98/);
 }
 
 void main();
