@@ -13,6 +13,16 @@ frontend/apps/*/out
 **/__pycache__
 **/.pytest_cache
 **/.venv
+!oj-gateway/target/
+!oj-gateway/target/*.jar
+!oj-modules/oj-system/target/
+!oj-modules/oj-system/target/*.jar
+!oj-modules/oj-friend/target/
+!oj-modules/oj-friend/target/*.jar
+!oj-modules/oj-job/target/
+!oj-modules/oj-job/target/*.jar
+!oj-modules/oj-judge/target/
+!oj-modules/oj-judge/target/*.jar
 oj-agent/tmp_pytest_config
 oj-agent/tmp_pytest_dense
 logs
