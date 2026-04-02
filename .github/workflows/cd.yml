@@ -183,6 +183,14 @@ jobs:
           rsync -az .cd-tmp/stack.env "${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}:${DEPLOY_BASE_DIR}/deploy/prod/env/stack.env"
           rsync -az .cd-tmp/runtime.env "${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}:${DEPLOY_BASE_DIR}/deploy/prod/env/runtime.env"
 
+      - name: Log manager in to GHCR
+        shell: bash
+        run: |
+          printf '%s\n' "${{ secrets.REGISTRY_PASSWORD }}" | ssh "${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}" "\
+            docker login ghcr.io \
+              -u '${{ secrets.REGISTRY_USERNAME }}' \
+              --password-stdin"
+
       - name: Deploy on manager
         shell: bash
         run: |
