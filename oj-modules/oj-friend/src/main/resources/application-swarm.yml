@@ -39,8 +39,8 @@ mail:
 
 training:
   agent:
-    service-id: oj-agent
-    base-url:
+    service-id: ${AGENT_SERVICE_NAME:oj-agent}
+    base-url: ${AGENT_PUBLIC_BASE_URL:}
     plan-path: /api/training/plan
     candidate-limit: 40
     client:

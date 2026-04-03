@@ -21,11 +21,14 @@ services:
   web:
     image: ${WEB_IMAGE}
     environment:
+      APP_NAME: web
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: 0.0.0.0
+      SYNCODE_BACKEND_BASE_URL: http://oj-gateway:19090
     networks:
       - edge
+      - backend
     deploy:
       placement:
         constraints:
@@ -34,9 +37,11 @@ services:
   app:
     image: ${APP_IMAGE}
     environment:
+      APP_NAME: app
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: 0.0.0.0
+      SYNCODE_BACKEND_BASE_URL: http://oj-gateway:19090
     networks:
       - edge
       - backend
@@ -48,9 +53,11 @@ services:
   admin:
     image: ${ADMIN_IMAGE}
     environment:
+      APP_NAME: admin
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: 0.0.0.0
+      SYNCODE_BACKEND_BASE_URL: http://oj-gateway:19090
     networks:
       - edge
       - backend

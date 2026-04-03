@@ -12,8 +12,8 @@ import { Panel, Tag } from "@aioj/ui";
 
 function toneForTrainingStatus(status: string) {
   const normalized = String(status);
-  if (normalized.includes("畬")) return "success" as const;
-  if (normalized.includes("杩") || normalized.includes("行")) return "accent" as const;
+  if (normalized.includes("已完成")) return "success" as const;
+  if (normalized.includes("进行") || normalized.includes("执行")) return "accent" as const;
   return "default" as const;
 }
 
@@ -31,7 +31,7 @@ export default async function TrainingPage() {
 
   return (
     <AppShell rail={<AnnouncementCenter messages={messages.slice(0, 2)} />}>
-      <Panel className="hero-grid overflow-hidden p-6 md:p-7" tone="accent">
+      <Panel className="hero-grid overflow-hidden border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md md:p-7" tone="accent">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <p className="kicker">训练总览</p>
@@ -46,21 +46,21 @@ export default async function TrainingPage() {
             </div>
           </div>
           <div className="grid gap-3 md:grid-cols-3 lg:min-w-[460px]">
-            <div className="rounded-[18px] border border-[var(--border-soft)] bg-black/10 px-4 py-4">
+            <div className="rounded-[18px] border border-white/10 bg-white/[0.02] px-4 py-4 transition-all duration-300 ease-out hover:border-white/20 hover:bg-white/[0.04]">
               <p className="text-xs text-[var(--text-muted)]">完成度</p>
               <p className="mt-2 inline-flex items-center gap-2 text-lg font-semibold text-[var(--text-primary)]">
                 <TrendingUp size={16} className="text-[var(--accent)]" />
                 {training.completionRate}%
               </p>
             </div>
-            <div className="rounded-[18px] border border-[var(--border-soft)] bg-black/10 px-4 py-4">
+            <div className="rounded-[18px] border border-white/10 bg-white/[0.02] px-4 py-4 transition-all duration-300 ease-out hover:border-white/20 hover:bg-white/[0.04]">
               <p className="text-xs text-[var(--text-muted)]">任务数</p>
               <p className="mt-2 inline-flex items-center gap-2 text-lg font-semibold text-[var(--text-primary)]">
                 <Target size={16} className="text-[var(--accent)]" />
                 {training.tasks.length} 项
               </p>
             </div>
-            <div className="rounded-[18px] border border-[var(--border-soft)] bg-black/10 px-4 py-4">
+            <div className="rounded-[18px] border border-white/10 bg-white/[0.02] px-4 py-4 transition-all duration-300 ease-out hover:border-white/20 hover:bg-white/[0.04]">
               <p className="text-xs text-[var(--text-muted)]">下一步</p>
               <p className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
                 <Sparkles size={16} className="text-[var(--accent)]" />
@@ -72,7 +72,7 @@ export default async function TrainingPage() {
       </Panel>
 
       <div className="grid gap-4 xl:grid-cols-[0.96fr_1.04fr]">
-        <Panel className="p-5" tone="accent">
+        <Panel className="border border-white/10 bg-white/[0.03] p-5 backdrop-blur-md" tone="accent">
           <p className="kicker">训练总览</p>
           <h2 className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">当前节奏</h2>
           <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
@@ -88,19 +88,17 @@ export default async function TrainingPage() {
           </div>
         </Panel>
 
-        <Panel className="p-5">
+        <Panel className="border border-white/10 bg-white/[0.03] p-5 backdrop-blur-md">
           <p className="kicker">任务进度</p>
           <h2 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">当前任务</h2>
           <p className="mt-2 text-sm text-[var(--text-muted)]">完成度 {training.completionRate}%</p>
           <div className="mt-5 space-y-3">
             {training.tasks.length > 0 ? (
               training.tasks.map((task) => (
-                <div key={task.taskId} className="rounded-[18px] border border-[var(--border-soft)] bg-black/20 p-4">
+                <div key={task.taskId} className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4 transition-all duration-300 ease-out hover:border-white/20 hover:bg-white/[0.04]">
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-semibold text-[var(--text-primary)]">{task.title}</p>
-                    <Tag tone={toneForTrainingStatus(task.status)}>
-                      {task.status}
-                    </Tag>
+                    <Tag tone={toneForTrainingStatus(task.status)}>{task.status}</Tag>
                   </div>
                   <p className="mt-2 text-sm text-[var(--text-secondary)]">
                     聚焦 {task.focus} · 难度 {task.difficulty}
@@ -117,13 +115,13 @@ export default async function TrainingPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Panel className="p-5">
+        <Panel className="border border-white/10 bg-white/[0.03] p-5 backdrop-blur-md">
           <p className="kicker">优势方向</p>
           <div className="mt-4 space-y-2 text-sm leading-7 text-[var(--text-secondary)]">
             {training.strengths.length > 0 ? training.strengths.map((item) => <p key={item}>{item}</p>) : <p>暂无总结数据。</p>}
           </div>
         </Panel>
-        <Panel className="p-5">
+        <Panel className="border border-white/10 bg-white/[0.03] p-5 backdrop-blur-md">
           <p className="kicker">待补强项</p>
           <div className="mt-4 space-y-2 text-sm leading-7 text-[var(--text-secondary)]">
             {training.weaknesses.length > 0 ? training.weaknesses.map((item) => <p key={item}>{item}</p>) : <p>暂无弱项分析数据。</p>}

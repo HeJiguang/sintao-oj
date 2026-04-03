@@ -33,7 +33,7 @@ export function mapJudgeHistoryRow(row: BackendSubmissionRow, index: number): Su
     language: mapProgramType(row.programType),
     runtime: row.useTime != null ? `${row.useTime} ms` : "--",
     memory: row.useMemory != null ? `${row.useMemory} KB` : "--",
-    submittedAt: (row.createTime ?? row.updateTime ?? "").replace("T", " ") || "鍒氬垰",
+    submittedAt: (row.createTime ?? row.updateTime ?? "").replace("T", " ") || "刚刚",
     notes: outcome.message
   };
 }

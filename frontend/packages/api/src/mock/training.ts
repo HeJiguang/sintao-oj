@@ -1,10 +1,10 @@
 import type { ExamDetail, ExamSummary, TrainingSnapshot } from "../contracts";
 
-const TRAINING_STATUS_ACTIVE = "杩涜涓?" as TrainingSnapshot["tasks"][number]["status"];
-const TRAINING_STATUS_PENDING = "寰呭紑濮?" as TrainingSnapshot["tasks"][number]["status"];
-const EXAM_STATUS_UPCOMING = "鏈紑濮?" as ExamSummary["status"];
-const EXAM_STATUS_ACTIVE = "杩涜涓?" as ExamSummary["status"];
-const EXAM_STATUS_FINISHED = "宸茬粨鏉?" as ExamSummary["status"];
+const TRAINING_STATUS_ACTIVE = "进行中" as TrainingSnapshot["tasks"][number]["status"];
+const TRAINING_STATUS_PENDING = "待开始" as TrainingSnapshot["tasks"][number]["status"];
+const EXAM_STATUS_UPCOMING = "未开始" as ExamSummary["status"];
+const EXAM_STATUS_ACTIVE = "进行中" as ExamSummary["status"];
+const EXAM_STATUS_FINISHED = "已结束" as ExamSummary["status"];
 
 export const trainingSnapshot: TrainingSnapshot = {
   title: "哈希表与区间题稳定训练",
@@ -14,7 +14,7 @@ export const trainingSnapshot: TrainingSnapshot = {
   weeklyGoal: "本周完成 8 题，并做 1 次阶段测复盘",
   completionRate: 68,
   strengths: ["哈希表模板切换比较稳", "基础数组题提交节奏较好", "最近复盘执行率明显提升"],
-  weaknesses: ["复杂边界 case 还容易漏掉", "区间题模板还没有完全固化", "回溯题的状态管理容易写乱"],
+  weaknesses: ["复杂边界 case 仍容易漏掉", "区间题模板还没有完全固化", "回溯题的状态管理容易写乱"],
   tasks: [
     {
       taskId: "task-1",

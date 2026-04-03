@@ -26,9 +26,9 @@ type BackendTrainingCurrent = {
 };
 
 function normalizeTaskStatus(status?: number | null): TrainingSnapshot["tasks"][number]["status"] {
-  if (status === 1) return "杩涜涓?" as TrainingSnapshot["tasks"][number]["status"];
-  if (status === 2) return "宸插畬鎴?" as TrainingSnapshot["tasks"][number]["status"];
-  return "寰呭紑濮?" as TrainingSnapshot["tasks"][number]["status"];
+  if (status === 1) return "进行中";
+  if (status === 2) return "已完成";
+  return "待开始";
 }
 
 function splitPoints(value?: string | null) {

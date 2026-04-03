@@ -102,7 +102,7 @@ function mapQuestionDetail(row: BackendQuestionDetail, tokenQuestionId?: string)
 
   return {
     ...base,
-    summary: preset?.summary ?? `${row.title} 的真实题目详情已从后端加载。`,
+    summary: preset?.summary ?? `${row.title} 的真实题面详情已从后端加载。`,
     content: contentBlocks.length > 0 ? contentBlocks : preset?.content ?? [],
     constraints: preset?.constraints ?? [],
     hints: preset?.hints ?? [],
@@ -139,5 +139,5 @@ export async function fetchLiveProblemDetail(questionId: string, token?: string 
 }
 
 export function getQuestionMockFallback(questionId?: string) {
-  return questionDetails[questionId ?? ""] ?? questions[0] ? questionDetails["two-sum"] : questionDetails["two-sum"];
+  return questionDetails[questionId ?? ""] ?? questionDetails["two-sum"];
 }

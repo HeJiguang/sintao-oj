@@ -37,6 +37,19 @@ function mapExamRow(row: BackendExamRow): ExamSummary {
   };
 }
 
+function buildLiveFallbackExamDetail(examId: string): ExamDetail {
+  return {
+    examId,
+    title: "考试暂不可用",
+    status: UPCOMING_EXAM_STATUS,
+    startTime: "--",
+    endTime: "--",
+    durationMinutes: 0,
+    questionCount: 0,
+    firstQuestionId: undefined
+  };
+}
+
 export async function fetchLiveExamList() {
   const payload = await requestJson<TableEnvelope<BackendExamRow>>("/friend/exam/semiLogin/list?pageNum=1&pageSize=20");
   return unwrapTable(payload).rows.map(mapExamRow);
@@ -44,18 +57,21 @@ export async function fetchLiveExamList() {
 
 export async function fetchLiveExamDetail(examId: string, token?: string | null): Promise<ExamDetail> {
   const list = await fetchLiveExamList();
-  const base = list.find((item) => item.examId === examId) ?? getExamMockFallback(examId);
+  const base = list.find((item) => item.examId === examId) ?? buildLiveFallbackExamDetail(examId);
+  let firstQuestionId: string | undefined;
 
-  let firstQuestionId = getExamMockFallback(examId).firstQuestionId;
   if (token) {
     try {
       const firstQuestionPayload = await requestJson<ApiEnvelope<string>>(
         `/friend/exam/getFirstQuestion?examId=${encodeURIComponent(examId)}`,
         { token }
       );
-      firstQuestionId = unwrapData(firstQuestionPayload) || firstQuestionId;
+      const resolvedQuestionId = unwrapData(firstQuestionPayload);
+      if (resolvedQuestionId && /^\d+$/.test(String(resolvedQuestionId))) {
+        firstQuestionId = String(resolvedQuestionId);
+      }
     } catch {
-      // Keep the fallback first-question contract when the user-side exam route is unavailable.
+      // Keep the exam shell available instead of falling back to mock string IDs.
     }
   }
 

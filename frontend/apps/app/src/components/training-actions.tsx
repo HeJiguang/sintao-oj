@@ -72,7 +72,7 @@ export function TrainingActions({ direction, tasks }: TrainingActionsProps) {
   }
 
   return (
-    <Panel className="p-5">
+    <Panel className="border border-white/10 bg-white/[0.02] p-5 backdrop-blur-md">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="kicker">Actions</p>
@@ -87,7 +87,7 @@ export function TrainingActions({ direction, tasks }: TrainingActionsProps) {
         {tasks.map((task) => {
           const href = resolveTaskHref(task);
           return (
-            <div key={task.taskId} className="rounded-[18px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-4 py-3">
+            <div key={task.taskId} className="rounded-[18px] border border-white/10 bg-white/[0.02] px-4 py-3 transition-all duration-300 ease-out hover:border-white/20 hover:bg-white/[0.04]">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-[var(--text-primary)]">{task.title}</p>
@@ -97,7 +97,7 @@ export function TrainingActions({ direction, tasks }: TrainingActionsProps) {
                   {href ? (
                     <a
                       href={href}
-                      className="inline-flex h-9 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border-strong)] bg-[var(--surface-2)] px-4 text-sm font-medium text-[var(--text-primary)]"
+                      className="inline-flex h-9 items-center justify-center rounded-[var(--radius-sm)] border border-white/10 bg-white/[0.02] px-4 text-sm font-medium text-[var(--text-primary)] transition-all duration-300 ease-out hover:border-white/20 hover:bg-white/[0.04]"
                     >
                       进入任务
                     </a>

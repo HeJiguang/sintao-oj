@@ -20,6 +20,7 @@ RUN npm run build -w @aioj/${APP_NAME}
 FROM node:22-alpine AS runner
 
 ARG APP_NAME
+ENV APP_NAME=${APP_NAME}
 
 ENV NODE_ENV=production
 ENV PORT=3000
