@@ -18,11 +18,11 @@ const timelineItems = [
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
+    <main className="home-page min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
       <section className="px-4 py-4 md:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between rounded-[22px] border border-[var(--border-soft)] bg-[var(--surface-overlay)] px-4 py-3 backdrop-blur-xl">
+        <div className="home-nav mx-auto flex max-w-7xl items-center justify-between rounded-[22px] border border-[var(--border-soft)] bg-[var(--surface-overlay)] px-4 py-3 backdrop-blur-xl">
           <a className="flex items-center gap-3 transition-opacity hover:opacity-85" href="/">
-            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white text-[12px] font-bold tracking-[0.12em] text-[#09111a]">
+            <div className="home-brand-mark flex h-9 w-9 items-center justify-center rounded-[12px] bg-white text-[12px] font-bold tracking-[0.12em] text-[#09111a]">
               SC
             </div>
             <div>
@@ -48,7 +48,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="flex flex-col justify-between gap-8">
             <div className="space-y-6">
-              <Tag tone="accent" className="px-3 py-1 text-[10px]">
+              <Tag tone="accent" className="home-tag px-3 py-1 text-[10px]">
                 AI-native workflow
               </Tag>
               <div className="space-y-5">
@@ -78,7 +78,7 @@ export default function HomePage() {
 
             <div className="grid gap-6 border-t border-[var(--border-soft)] pt-8 sm:grid-cols-3">
               {heroStats.map((item) => (
-                <div key={item.label}>
+                <div key={item.label} className="home-stat">
                   <p className="font-mono text-4xl font-semibold tracking-[-0.04em] text-white">{item.value}</p>
                   <p className="mt-2 text-xs uppercase tracking-[0.14em] text-[var(--text-faint)]">{item.label}</p>
                 </div>
@@ -87,7 +87,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-            <Panel className="p-6 xl:col-span-2" tone="accent">
+            <Panel className="home-accent-panel p-6 xl:col-span-2" tone="accent">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="kicker">Problem Setup</p>
@@ -96,14 +96,14 @@ export default function HomePage() {
                 </div>
                 <Tag tone="success">Easy</Tag>
               </div>
-              <div className="mt-6 rounded-[20px] border border-[var(--border-soft)] bg-black/20 p-4 text-sm leading-7 text-[var(--text-secondary)]">
+              <div className="home-accent-card mt-6 rounded-[20px] border border-[var(--border-soft)] bg-black/20 p-4 text-sm leading-7 text-[var(--text-secondary)]">
                 题面、代码编辑器、运行结果和 AI 分析会停留在同一视图里，减少上下文切换。训练系统只在真正需要时给出建议，而不是持续打断你。
               </div>
             </Panel>
 
             <Panel className="p-5" hoverable>
               <p className="kicker">Editor Focus</p>
-              <div className="mt-4 rounded-[20px] border border-[var(--border-soft)] bg-[#0b0d15] p-5 font-mono text-[13px] leading-7 text-[#d9e6ff]">
+              <div className="home-code-block mt-4 rounded-[20px] border border-[var(--border-soft)] bg-[#0b0d15] p-5 font-mono text-[13px] leading-7 text-[#d9e6ff]">
                 <p className="text-[#64708f]">// Find complement</p>
                 <p>Map&lt;Integer, Integer&gt; seen = new HashMap&lt;&gt;();</p>
                 <p className="mt-2">for (int i = 0; i &lt; nums.length; i++) {"{"}</p>
@@ -119,7 +119,7 @@ export default function HomePage() {
               <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
                 热题、公告、训练目标和最近提交会在一个控制台里自然汇合，而不是散落在多个孤立页面里。
               </p>
-              <div className="mt-5 rounded-[18px] border border-[rgba(130,233,194,0.24)] bg-[rgba(70,216,162,0.08)] p-4">
+              <div className="home-suggestion mt-5 rounded-[18px] border border-[rgba(130,233,194,0.24)] bg-[rgba(70,216,162,0.08)] p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">AI Suggestion</p>
                 <p className="mt-2 text-sm leading-7 text-[var(--text-secondary)]">
                   当前题目更适合先查后存的写法，这样能避免索引覆盖带来的边界错误。
@@ -134,7 +134,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[0.92fr_1.08fr]">
           <Panel className="p-7 md:p-8">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-[16px] border border-[var(--border-soft)] bg-white/[0.04] text-white">
+              <div className="home-icon-shell flex h-11 w-11 items-center justify-center rounded-[16px] border border-[var(--border-soft)] bg-white/[0.04] text-white">
                 <Sparkles size={18} />
               </div>
               <div>
@@ -154,8 +154,8 @@ export default function HomePage() {
                 { icon: <PanelsTopLeft size={16} />, text: "题库、训练、考试和个人进度都用统一的控制台语义组织。" },
                 { icon: <Bot size={16} />, text: "AI 只在关键节点出现，避免廉价感很重的全屏装饰和泛滥提示。" }
               ].map((item) => (
-                <div key={item.text} className="flex items-start gap-3 rounded-[18px] border border-[var(--border-soft)] bg-white/[0.02] px-4 py-4">
-                  <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-[12px] bg-white/[0.04] text-[var(--accent)]">
+                <div key={item.text} className="home-feature-row flex items-start gap-3 rounded-[18px] border border-[var(--border-soft)] bg-white/[0.02] px-4 py-4">
+                  <div className="home-feature-icon mt-0.5 flex h-8 w-8 items-center justify-center rounded-[12px] bg-white/[0.04] text-[var(--accent)]">
                     {item.icon}
                   </div>
                   <p className="text-sm leading-7 text-[var(--text-secondary)]">{item.text}</p>
@@ -164,7 +164,7 @@ export default function HomePage() {
             </div>
           </Panel>
 
-          <Panel className="overflow-hidden p-0" tone="accent">
+          <Panel className="home-preview-panel overflow-hidden p-0" tone="accent">
             <div className="grid gap-0 xl:grid-cols-[1.1fr_0.9fr]">
               <div className="border-b border-[var(--border-soft)] p-7 xl:border-b-0 xl:border-r">
                 <div className="flex items-center justify-between">
@@ -175,17 +175,17 @@ export default function HomePage() {
                   <Tag tone="accent">Live</Tag>
                 </div>
 
-                <div className="mt-6 rounded-[22px] border border-[var(--border-soft)] bg-[#111427] p-5">
+                <div className="home-chat-shell mt-6 rounded-[22px] border border-[var(--border-soft)] bg-[#111427] p-5">
                   <div className="mb-5 flex items-center gap-2">
                     <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
                     <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
                     <span className="h-3 w-3 rounded-full bg-[#28c840]" />
                   </div>
                   <div className="space-y-4">
-                    <div className="rounded-[18px] bg-[#171b31] p-4">
+                    <div className="home-chat-bubble rounded-[18px] bg-[#171b31] p-4">
                       <p className="text-sm text-[#dce5ff]">请解释 E = mc² 的含义，并给出编程竞赛中常见的推导误区。</p>
                     </div>
-                    <div className="rounded-[18px] bg-[#0d1021] p-4 text-sm leading-7 text-[#9aa5c7]">
+                    <div className="home-chat-bubble-muted rounded-[18px] bg-[#0d1021] p-4 text-sm leading-7 text-[#9aa5c7]">
                       这里保留一个清晰的对话区，但不会让整个页面退化成聊天模板。训练信息、题目状态和操作入口仍然是主角。
                     </div>
                   </div>
@@ -196,7 +196,7 @@ export default function HomePage() {
                 <p className="kicker">Timeline</p>
                 <div className="mt-5 space-y-5">
                   {timelineItems.map((item) => (
-                    <div key={item.title} className="relative rounded-[18px] border border-[var(--border-soft)] bg-white/[0.03] px-4 py-4">
+                    <div key={item.title} className="home-timeline-item relative rounded-[18px] border border-[var(--border-soft)] bg-white/[0.03] px-4 py-4">
                       <span
                         className={`absolute left-0 top-4 h-8 w-[3px] rounded-r-full ${
                           item.tone === "accent" ? "bg-[var(--accent)]" : item.tone === "neutral" ? "bg-[#7d8bb4]" : "bg-white/12"
