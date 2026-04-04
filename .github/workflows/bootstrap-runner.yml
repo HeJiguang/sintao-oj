@@ -49,12 +49,6 @@ jobs:
           print(f"asset_url={asset['browser_download_url']}")
           PY
 
-      - name: Download runner package
-        shell: bash
-        run: |
-          mkdir -p .cd-tmp
-          curl -L "${{ steps.runner.outputs.asset_url }}" -o ".cd-tmp/${{ steps.runner.outputs.asset_name }}"
-
       - name: Prepare SSH key
         shell: bash
         run: |
@@ -67,13 +61,14 @@ jobs:
         shell: bash
         run: |
           archive_name="${{ steps.runner.outputs.asset_name }}"
+          archive_url="${{ steps.runner.outputs.asset_url }}"
           runner_name="${{ steps.meta.outputs.runner_name }}"
 
-          ssh "${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}" "mkdir -p ~/onlineoj-runner"
-          scp ".cd-tmp/${archive_name}" "${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}:~/onlineoj-runner/${archive_name}"
-
-          ssh "${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}" "\
+          ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=40 "${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}" "\
             set -euo pipefail && \
+            mkdir -p ~/onlineoj-runner && \
+            cd ~/onlineoj-runner && \
+            curl --fail --retry 5 --retry-delay 5 --retry-all-errors -L -C - -o ${archive_name} ${archive_url} && \
             id -u syncode-runner >/dev/null 2>&1 || useradd --create-home --home-dir /opt/syncode-runner --shell /bin/bash syncode-runner && \
             usermod -aG docker syncode-runner || true && \
             command -v git >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1 && command -v mvn >/dev/null 2>&1 || \
