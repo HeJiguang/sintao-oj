@@ -1,0 +1,51 @@
+name: prod-diagnose
+
+on:
+  workflow_dispatch:
+
+env:
+  DEPLOY_BASE_DIR: ~/onlineoj
+  STACK_NAME: onlineoj-prod
+
+jobs:
+  diagnose:
+    name: Diagnose Production Stack
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare SSH key
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.DEPLOY_SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Collect remote diagnostics
+        shell: bash
+        run: |
+          ssh "${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}" 'bash -s' <<'EOF'
+          set +e
+          echo "=== date ==="
+          date
+          echo "=== docker service ls ==="
+          docker service ls
+          echo "=== docker stack services ${STACK_NAME} ==="
+          docker stack services "${STACK_NAME}"
+          echo "=== docker stack ps ${STACK_NAME} ==="
+          docker stack ps "${STACK_NAME}" --no-trunc
+          echo "=== docker ps ==="
+          docker ps
+          for service in \
+            "${STACK_NAME}_nginx" \
+            "${STACK_NAME}_web" \
+            "${STACK_NAME}_app" \
+            "${STACK_NAME}_oj-gateway" \
+            "${STACK_NAME}_oj-system" \
+            "${STACK_NAME}_oj-agent"
+          do
+            echo "=== service inspect: ${service} ==="
+            docker service inspect "${service}" --pretty || true
+            echo "=== service logs: ${service} ==="
+            docker service logs --tail 120 "${service}" || true
+          done
+          EOF
