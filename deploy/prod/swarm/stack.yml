@@ -125,6 +125,8 @@ services:
     image: ${JUDGE_IMAGE}
     env_file:
       - ../env/runtime.env
+    environment:
+      SPRING_PROFILES_ACTIVE: swarm
     volumes:
       - type: bind
         source: ${DOCKER_SOCKET_PATH}
