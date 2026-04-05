@@ -3,7 +3,8 @@
 This repository now uses a split pipeline:
 
 - `ci.yml` runs on GitHub-hosted runners.
-- `cd.yml` runs on the self-hosted runner installed on `101.96.200.76`.
+- `deploy-notify.yml` runs on GitHub-hosted runners and emails a deployment approval request after `ci.yml` succeeds on `main`.
+- `cd.yml` runs on the self-hosted runner installed on `101.96.200.76`, but only when you trigger it manually.
 
 The production deploy path no longer depends on GHCR or on GitHub-hosted runners SSHing into the manager for every release.
 
@@ -43,7 +44,7 @@ This is a temporary GitHub runner registration token for this repository.
 
 ### `WORKER_SSH_KEY`
 
-Used by `cd.yml`.
+Used by `cd.yml`, `prod-recover.yml`, and `prod-diagnose.yml` when the runner-local key file is unavailable.
 
 This must be a private key that allows the manager-hosted runner job to copy images to `101.96.200.77`.
 
@@ -51,7 +52,7 @@ If manager and worker already trust the same deploy key, reuse that key here.
 
 ### `STACK_ENV_PROD`
 
-Used by `cd.yml`.
+Used by `cd.yml` and `prod-recover.yml`.
 
 Copy the full content of [stack.env.prod.template](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/env/stack.env.prod.template) into this secret, then replace:
 
@@ -65,7 +66,7 @@ Do not manually replace `sha-REPLACE_ME`. The workflow does that for each releas
 
 ### `RUNTIME_ENV_PROD`
 
-Used by `cd.yml`.
+Used by `cd.yml` and `prod-recover.yml`.
 
 Copy the full content of [runtime.env.prod.template](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/env/runtime.env.prod.template) into this secret and replace the runtime placeholders with real production values.
 
@@ -85,13 +86,64 @@ Keep these judge-related values unless you have a deliberate alternative:
 - `SANDBOX_DOCKER_HOST=unix:///var/run/docker.sock`
 - `SANDBOX_DOCKER_VOLUME=/usr/share/java`
 
+### `DEPLOY_NOTIFY_SMTP_HOST`
+
+Used by `deploy-notify.yml`.
+
+For QQ Mail, this is typically:
+
+```text
+smtp.qq.com
+```
+
+### `DEPLOY_NOTIFY_SMTP_PORT`
+
+Used by `deploy-notify.yml`.
+
+For QQ Mail SSL SMTP, this is typically:
+
+```text
+465
+```
+
+### `DEPLOY_NOTIFY_SMTP_USERNAME`
+
+Used by `deploy-notify.yml`.
+
+Set this to the QQ mailbox account that will send the approval email.
+
+### `DEPLOY_NOTIFY_SMTP_PASSWORD`
+
+Used by `deploy-notify.yml`.
+
+Set this to the QQ Mail SMTP authorization code, not the normal mailbox login password.
+
+### `DEPLOY_NOTIFY_TO`
+
+Used by `deploy-notify.yml`.
+
+Set this to the mailbox that should receive the deployment approval email, for example:
+
+```text
+your-name@qq.com
+```
+
+### `DEPLOY_NOTIFY_FROM`
+
+Optional.
+
+Used by `deploy-notify.yml`.
+
+If unset, the workflow uses `DEPLOY_NOTIFY_SMTP_USERNAME` as the sender address.
+
 ## Recommended Setup Order
 
 1. Prepare `STACK_ENV_PROD`.
 2. Prepare `RUNTIME_ENV_PROD`.
-3. Verify SSH key access from manager to worker.
-4. Generate a fresh `SELF_HOSTED_RUNNER_BOOTSTRAP_TOKEN`.
-5. Run `bootstrap-runner.yml`.
-6. Wait for the `syncode-prod` runner to show up in GitHub.
-7. Trigger `cd.yml` manually once.
-8. After the first successful release, let `workflow_run` auto-deploy from `main`.
+3. Prepare the `DEPLOY_NOTIFY_*` SMTP secrets for the approval email.
+4. Verify SSH key access from manager to worker.
+5. Generate a fresh `SELF_HOSTED_RUNNER_BOOTSTRAP_TOKEN`.
+6. Run `bootstrap-runner.yml`.
+7. Wait for the `syncode-prod` runner to show up in GitHub.
+8. Push to `main` and confirm that `deploy-notify.yml` sends the approval email.
+9. After you receive the email, trigger `cd.yml` manually with the `source_run_id` from the email.

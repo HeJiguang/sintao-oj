@@ -1,0 +1,121 @@
+name: deploy-notify
+
+on:
+  workflow_run:
+    workflows:
+      - ci
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  notify:
+    name: Email Deploy Approval Request
+    if: >-
+      ${{
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main'
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify SMTP configuration
+        shell: bash
+        env:
+          DEPLOY_NOTIFY_SMTP_HOST: ${{ secrets.DEPLOY_NOTIFY_SMTP_HOST }}
+          DEPLOY_NOTIFY_SMTP_PORT: ${{ secrets.DEPLOY_NOTIFY_SMTP_PORT }}
+          DEPLOY_NOTIFY_SMTP_USERNAME: ${{ secrets.DEPLOY_NOTIFY_SMTP_USERNAME }}
+          DEPLOY_NOTIFY_SMTP_PASSWORD: ${{ secrets.DEPLOY_NOTIFY_SMTP_PASSWORD }}
+          DEPLOY_NOTIFY_TO: ${{ secrets.DEPLOY_NOTIFY_TO }}
+        run: |
+          required_secrets=(
+            DEPLOY_NOTIFY_SMTP_HOST
+            DEPLOY_NOTIFY_SMTP_PORT
+            DEPLOY_NOTIFY_SMTP_USERNAME
+            DEPLOY_NOTIFY_SMTP_PASSWORD
+            DEPLOY_NOTIFY_TO
+          )
+
+          for secret_name in "${required_secrets[@]}"; do
+            if [[ -z "${!secret_name}" ]]; then
+              echo "Missing required secret: ${secret_name}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Send deploy approval email
+        shell: bash
+        env:
+          SMTP_HOST: ${{ secrets.DEPLOY_NOTIFY_SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.DEPLOY_NOTIFY_SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.DEPLOY_NOTIFY_SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.DEPLOY_NOTIFY_SMTP_PASSWORD }}
+          SMTP_TO: ${{ secrets.DEPLOY_NOTIFY_TO }}
+          SMTP_FROM: ${{ secrets.DEPLOY_NOTIFY_FROM }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          ACTOR: ${{ github.event.workflow_run.actor.login }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          EVENT_NAME: ${{ github.event.workflow_run.event }}
+          COMMIT_MESSAGE: ${{ github.event.workflow_run.head_commit.message }}
+        run: |
+          python <<'PY'
+          import os
+          import smtplib
+          from email.message import EmailMessage
+
+          repository = os.environ["REPOSITORY"]
+          run_id = os.environ["WORKFLOW_RUN_ID"]
+          head_sha = os.environ["HEAD_SHA"]
+          head_branch = os.environ["HEAD_BRANCH"]
+          actor = os.environ["ACTOR"]
+          workflow_name = os.environ["WORKFLOW_NAME"]
+          event_name = os.environ["EVENT_NAME"]
+          commit_message = (os.environ.get("COMMIT_MESSAGE") or "").strip() or "(no commit message)"
+          image_tag = f"sha-{head_sha[:12]}"
+          actions_base = f"{os.environ['SERVER_URL']}/{repository}/actions"
+          ci_run_url = f"{actions_base}/runs/{run_id}"
+          cd_workflow_url = f"{actions_base}/workflows/cd.yml"
+          smtp_from = os.environ.get("SMTP_FROM") or os.environ["SMTP_USERNAME"]
+
+          subject = f"[SynCode Deploy Approval] {head_branch} {image_tag}"
+          body = f"""CI has completed successfully and this release is waiting for your manual approval.
+
+          Repository: {repository}
+          Branch: {head_branch}
+          Commit: {head_sha}
+          Image tag: {image_tag}
+          Triggered by: {actor}
+          CI workflow: {workflow_name}
+          CI event: {event_name}
+          CI run id: {run_id}
+          Commit message:
+          {commit_message}
+
+          This release will NOT auto-deploy.
+
+          To publish it manually:
+          1. Open the CD workflow page: {cd_workflow_url}
+          2. Click "Run workflow"
+          3. Set source_run_id to: {run_id}
+          4. Keep image_tag empty to use the default, or set it explicitly to: {image_tag}
+
+          CI details:
+          {ci_run_url}
+          """
+
+          message = EmailMessage()
+          message["Subject"] = subject
+          message["From"] = smtp_from
+          message["To"] = os.environ["SMTP_TO"]
+          message.set_content(body)
+
+          with smtplib.SMTP_SSL(os.environ["SMTP_HOST"], int(os.environ["SMTP_PORT"])) as smtp:
+            smtp.login(os.environ["SMTP_USERNAME"], os.environ["SMTP_PASSWORD"])
+            smtp.send_message(message)
+          PY
