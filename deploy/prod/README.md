@@ -1,166 +1,68 @@
-# OnlineOJ Production Deploy Guide
+# OnlineOJ Production Deploy
 
-这份文档对应你当前的真实目标环境，不是假想环境。
+This directory contains the production deploy assets for the domestic-first release pipeline.
 
-- Swarm manager: `101.96.200.76`
-- Swarm worker: `101.96.200.77`
-- 中间件现状:
-  - manager: `mysql`, `redis`, `rabbitmq`, `nacos`
-  - worker: `elasticsearch`, `qdrant`
-- 入口策略: 同一域名，不同路径
-  - `/` -> `web`
-  - `/app` -> `app`
-  - `/admin` -> `admin`
+## Deployment Model
 
-## 1. 先建立正确的部署心智模型
+- `ci.yml` runs on GitHub-hosted runners.
+- `bootstrap-runner.yml` installs a self-hosted runner on `101.96.200.76`.
+- `cd.yml` runs on that self-hosted runner.
+- The manager builds all production images locally.
+- The manager copies worker-only images to `101.96.200.77`.
+- The manager runs `docker stack deploy` after both nodes have the required images.
+- `docker stack deploy` uses `--resolve-image never`, so Swarm does not try to resolve tags against an external registry during rollout.
 
-你现在要构建的不是“代码上传到服务器”这么简单，而是下面这条链路：
+This avoids two unstable dependencies:
 
-1. 本地代码进入 GitHub
-2. GitHub Actions 执行 CI
-3. CI 通过后构建 Docker 镜像
-4. 镜像推送到镜像仓库
-5. GitHub Actions 通过 SSH 登录到 Swarm manager
-6. manager 执行 `docker stack deploy`
-7. Swarm 按约束把服务分发到 manager / worker
+- GitHub-hosted runners SSHing into domestic production for every release.
+- Production nodes pulling large images from foreign registries during rollout.
 
-这一整条链里，GitHub Actions 不直接运行你的服务。
-GitHub Actions 只做三件事：验证、打包、触发远端部署。
+## Key Files
 
-## 2. 这一套里每个部分分别负责什么
+- [docker/java-service.Dockerfile](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/docker/java-service.Dockerfile)
+- [docker/next-app.Dockerfile](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/docker/next-app.Dockerfile)
+- [docker/oj-agent.Dockerfile](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/docker/oj-agent.Dockerfile)
+- [swarm/stack.yml](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/swarm/stack.yml)
+- [scripts/build-images.sh](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/scripts/build-images.sh)
+- [scripts/sync-worker-images.sh](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/scripts/sync-worker-images.sh)
+- [scripts/deploy.sh](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/scripts/deploy.sh)
+- [env/stack.env.prod.template](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/env/stack.env.prod.template)
+- [env/runtime.env.prod.template](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/env/runtime.env.prod.template)
+- [env/github-secrets-guide.md](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/env/github-secrets-guide.md)
 
-### GitHub CI
+## Release Flow
 
-CI 只负责确认代码“能不能进入可发布状态”。
+1. GitHub runs `ci.yml`.
+2. After `ci.yml` succeeds on `main`, GitHub schedules `cd.yml`.
+3. The self-hosted runner on `101.96.200.76` checks out the target revision.
+4. The job renders `deploy/prod/env/stack.env` and `deploy/prod/env/runtime.env` from GitHub Secrets.
+5. The manager builds the production images locally.
+6. The manager saves and copies the worker image set to `101.96.200.77`, then verifies those images exist on the worker.
+7. The manager runs `docker stack deploy --resolve-image never`.
 
-它至少要验证三类内容：
+## First-Time Bootstrap
 
-- Java 微服务可以编译，必要时跑部分测试
-- `oj-agent` 可以安装依赖并跑测试
-- `frontend` 三套站点可以测试并构建
+1. Fill in the required GitHub Secrets described in [env/github-secrets-guide.md](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/env/github-secrets-guide.md).
+2. Generate a fresh runner registration token for this repository.
+3. Save that token as `SELF_HOSTED_RUNNER_BOOTSTRAP_TOKEN`.
+4. Run `bootstrap-runner.yml`.
+5. Confirm a runner with label `syncode-prod` is online.
+6. Trigger `cd.yml` manually once.
 
-如果 CI 失败，就说明这一版代码不应该进入部署流程。
+## Manual Local Deploy
 
-### Docker 镜像
+```bash
+BUILD_LOCAL_IMAGES=true \
+SYNC_WORKER_IMAGES=true \
+WORKER_SSH_KEY_FILE=/path/to/worker_id_ed25519 \
+STACK_ENV_FILE=deploy/prod/env/stack.env \
+RUNTIME_ENV_FILE=deploy/prod/env/runtime.env \
+deploy/prod/scripts/deploy.sh
+```
 
-镜像是“可部署产物”。
+## Notes
 
-你不能让服务器每次部署都重新 `git pull` 再本地现编现跑。更稳的做法是：
-
-- GitHub Actions 统一构建镜像
-- 推到统一仓库
-- 服务器只负责拉镜像和更新服务
-
-这样回滚也简单，因为你回滚的不是代码目录，而是镜像 tag。
-
-### Docker Swarm
-
-Swarm 负责“在哪台机器上跑哪个服务”。
-
-你现在的推荐分工是：
-
-- manager: `nginx`, `web`, `app`, `admin`, `oj-gateway`, `oj-system`, `oj-friend`, `oj-job`
-- worker: `oj-agent`, `oj-judge`
-
-原因是：
-
-- manager 同时承担控制面和公网入口，更适合主业务和边缘层
-- worker 更适合放 `oj-agent` 和 `oj-judge` 这种相对独立、后续可能需要调资源限制的服务
-
-### Nginx
-
-Nginx 是公网入口，统一接收用户请求，然后按路径转发：
-
-- `/` 转发到 `web`
-- `/app` 转发到 `app`
-- `/admin` 转发到 `admin`
-- API 和 WebSocket 后续通常转发到 `oj-gateway`
-
-### Nacos
-
-Nacos 是运行期业务配置中心，不是 GitHub CI 的替代品。
-
-建议边界如下：
-
-- GitHub Secrets / Swarm env:
-  - 镜像仓库用户名密码
-  - SSH 私钥
-  - 部署目标机器
-  - 镜像 tag
-- Nacos:
-  - MySQL / Redis / RabbitMQ / OSS / ES / Qdrant / agent 运行配置
-  - Java 微服务业务配置
-
-## 3. 部署目录里的文件分别是什么
-
-这一批生产部署文件会集中放在 `deploy/prod/`。
-
-你可以先把它理解成三层：
-
-- `env/`
-  - 放环境变量样例
-- `nginx/`
-  - 放统一入口反向代理配置
-- `swarm/`
-  - 放 `stack.yml` 和部署脚本
-
-## 4. GitHub 里最终需要配置哪些 Secrets
-
-后续做 `cd.yml` 时，至少会需要这些 Secrets：
-
-- `REGISTRY_USERNAME`
-- `REGISTRY_PASSWORD`
-- `DEPLOY_SSH_HOST`
-- `DEPLOY_SSH_USER`
-- `DEPLOY_SSH_KEY`
-- `STACK_ENV_PROD`
-- `RUNTIME_ENV_PROD`
-
-其中：
-
-- `STACK_ENV_PROD` 可以是一整份 `.env` 内容
-- `RUNTIME_ENV_PROD` 也是一整份 `.env` 内容，CD 会把它落成服务器上的 `deploy/prod/env/runtime.env`
-- 或者拆成多个独立 secret，但前者更适合第一次上线
-
-推荐直接参考：
-
-- `deploy/prod/env/github-secrets-guide.md`
-- `deploy/prod/env/stack.env.prod.template`
-- `deploy/prod/env/runtime.env.prod.template`
-
-## 4.1 第四课里 CD 具体会做什么
-
-这一版 `cd.yml` 的职责会固定成 4 步：
-
-1. 在 GitHub runner 上构建并推送镜像到 GHCR
-2. 通过 SSH 把 `deploy/prod/` 同步到 manager
-3. 把 `STACK_ENV_PROD` 和 `RUNTIME_ENV_PROD` 落成服务器文件
-4. 在 manager 上执行 `deploy/prod/scripts/deploy.sh`
-
-也就是说，CD 不直接修改远端业务代码目录，而是：
-
-- 推镜像
-- 同步部署骨架
-- 触发 `docker stack deploy`
-
-这才是更接近生产的方式。
-
-## 5. 第一次上线的推荐顺序
-
-不要一上来就写完整 CD。正确顺序是：
-
-1. 先补 Dockerfile
-2. 再补 `stack.yml`
-3. 先在服务器手工跑一次 `docker stack deploy`
-4. 手工部署跑通后，再写 GitHub CD
-
-这是因为：
-
-- 如果手工 deploy 都没跑通，GitHub CD 只会把问题藏得更深
-- 先打通手工链路，再做自动化，排错效率最高
-
-## 6. 你现在最该记住的一句话
-
-GitHub Actions 不是运行环境，Swarm 才是运行环境。
-
-GitHub Actions 负责把“代码”变成“镜像”，再通知 Swarm 更新服务。
+- This pipeline assumes the worker services remain constrained to the worker node.
+- If you move more services to the worker, update `WORKER_IMAGE_LIST` in the stack env secret/template.
+- `oj-judge` now expects the worker to provide `/var/run/docker.sock`, `/app/user-code`, and `/app/user-code-pool` as bind-mountable host paths.
+- If you later add a domestic registry, the image sync step can be replaced with local push/pull logic.

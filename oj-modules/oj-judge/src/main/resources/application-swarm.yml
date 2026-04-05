@@ -24,7 +24,8 @@ spring:
 
 sandbox:
   docker:
-    volume: /usr/share/java
+    host: ${SANDBOX_DOCKER_HOST:unix:///var/run/docker.sock}
+    volume: ${SANDBOX_DOCKER_VOLUME:/usr/share/java}
 
 judge:
   runtime-state:

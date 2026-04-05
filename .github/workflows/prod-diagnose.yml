@@ -4,26 +4,20 @@ on:
   workflow_dispatch:
 
 env:
-  DEPLOY_BASE_DIR: ~/onlineoj
   STACK_NAME: onlineoj-prod
 
 jobs:
   diagnose:
     name: Diagnose Production Stack
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted
+      - linux
+      - x64
+      - syncode-prod
     steps:
-      - name: Prepare SSH key
+      - name: Collect manager diagnostics
         shell: bash
         run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.DEPLOY_SSH_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Collect remote diagnostics
-        shell: bash
-        run: |
-          ssh "${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}" 'bash -s' <<'EOF'
           set +e
           echo "=== date ==="
           date
@@ -54,4 +48,32 @@ jobs:
             echo "=== service logs: ${service} ==="
             docker service logs --tail 120 "${service}" || true
           done
+
+      - name: Prepare worker SSH key
+        if: ${{ secrets.WORKER_SSH_KEY != '' }}
+        shell: bash
+        run: |
+          mkdir -p .cd-tmp
+          printf '%s\n' "${{ secrets.WORKER_SSH_KEY }}" > .cd-tmp/worker_id_ed25519
+          chmod 600 .cd-tmp/worker_id_ed25519
+
+      - name: Collect worker diagnostics
+        if: ${{ secrets.WORKER_SSH_KEY != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh_opts=(
+            -i .cd-tmp/worker_id_ed25519
+            -o StrictHostKeyChecking=accept-new
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=8
+          )
+          ssh "${ssh_opts[@]}" "root@101.96.200.77" 'bash -s' <<'EOF'
+          set +e
+          echo "=== worker date ==="
+          date
+          echo "=== worker docker ps ==="
+          docker ps
+          echo "=== worker docker images (judge/agent) ==="
+          docker images | grep -E 'oj-agent|oj-judge' || true
           EOF
