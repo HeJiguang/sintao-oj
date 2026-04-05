@@ -16,9 +16,16 @@ if [[ -z "$WORKER_SSH_KEY_FILE" || ! -f "$WORKER_SSH_KEY_FILE" ]]; then
   exit 1
 fi
 
-set -a
-source "$STACK_ENV_FILE"
-set +a
+load_env_file() {
+  local env_file="$1"
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    export "$line"
+  done < "$env_file"
+}
+
+load_env_file "$STACK_ENV_FILE"
 
 if [[ -z "${WORKER_SSH_HOST:-}" || -z "${WORKER_SSH_USER:-}" ]]; then
   echo "WORKER_SSH_HOST and WORKER_SSH_USER must be set in stack env" >&2
