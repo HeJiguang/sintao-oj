@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   notify:
-    name: Email Deploy Approval Request
+    name: Send Chinese Deploy Approval Email
     if: >-
       ${{
         github.event.workflow_run.conclusion == 'success' &&
@@ -83,29 +83,27 @@ jobs:
           cd_workflow_url = f"{actions_base}/workflows/cd.yml"
           smtp_from = os.environ.get("SMTP_FROM") or os.environ["SMTP_USERNAME"]
 
-          subject = f"[SynCode Deploy Approval] {head_branch} {image_tag}"
-          body = f"""CI has completed successfully and this release is waiting for your manual approval.
+          subject = f"[SynCode 发布确认] {head_branch} {image_tag}"
+          body = f"""CI 已经执行成功，这次版本正在等待你的人工确认，当前不会自动发布。
 
-          Repository: {repository}
-          Branch: {head_branch}
-          Commit: {head_sha}
-          Image tag: {image_tag}
-          Triggered by: {actor}
-          CI workflow: {workflow_name}
-          CI event: {event_name}
-          CI run id: {run_id}
-          Commit message:
+          仓库：{repository}
+          分支：{head_branch}
+          提交 SHA：{head_sha}
+          镜像 Tag：{image_tag}
+          触发人：{actor}
+          CI 工作流：{workflow_name}
+          触发事件：{event_name}
+          CI Run ID：{run_id}
+          提交信息：
           {commit_message}
 
-          This release will NOT auto-deploy.
+          如需发布，请手动执行 CD：
+          1. 打开 CD 工作流页面：{cd_workflow_url}
+          2. 点击 “Run workflow”
+          3. 将 source_run_id 填为：{run_id}
+          4. image_tag 可以留空使用默认值，或者显式填写：{image_tag}
 
-          To publish it manually:
-          1. Open the CD workflow page: {cd_workflow_url}
-          2. Click "Run workflow"
-          3. Set source_run_id to: {run_id}
-          4. Keep image_tag empty to use the default, or set it explicitly to: {image_tag}
-
-          CI details:
+          CI 详情链接：
           {ci_run_url}
           """
 

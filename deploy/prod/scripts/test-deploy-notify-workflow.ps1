@@ -21,7 +21,8 @@ $requiredSnippets = @(
     "DEPLOY_NOTIFY_TO",
     "workflows/cd.yml",
     "source_run_id",
-    "This release will NOT auto-deploy."
+    "当前不会自动发布",
+    "[SynCode 发布确认]"
 )
 
 foreach ($snippet in $requiredSnippets) {
