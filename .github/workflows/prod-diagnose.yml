@@ -5,6 +5,7 @@ on:
 
 env:
   STACK_NAME: onlineoj-prod
+  RUNNER_WORKER_SSH_KEY_FILE: /opt/syncode-runner/.ssh/onlineoj_worker_ci
 
 jobs:
   diagnose:
@@ -54,6 +55,11 @@ jobs:
         env:
           WORKER_SSH_KEY: ${{ secrets.WORKER_SSH_KEY }}
         run: |
+          if [[ -f "${RUNNER_WORKER_SSH_KEY_FILE}" ]]; then
+            mkdir -p .cd-tmp
+            install -m 600 "${RUNNER_WORKER_SSH_KEY_FILE}" .cd-tmp/worker_id_ed25519
+            exit 0
+          fi
           if [[ -z "${WORKER_SSH_KEY}" ]]; then
             echo "WORKER_SSH_KEY is empty, skip worker diagnostics bootstrap"
             exit 0

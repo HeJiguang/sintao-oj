@@ -29,6 +29,7 @@ env:
   STACK_NAME: onlineoj-prod
   STACK_ENV_FILE: deploy/prod/env/stack.env
   RUNTIME_ENV_FILE: deploy/prod/env/runtime.env
+  RUNNER_WORKER_SSH_KEY_FILE: /opt/syncode-runner/.ssh/onlineoj_worker_ci
 
 jobs:
   release:
@@ -107,7 +108,14 @@ jobs:
         shell: bash
         run: |
           mkdir -p repo/.cd-tmp
-          printf '%s\n' "${{ secrets.WORKER_SSH_KEY }}" > repo/.cd-tmp/worker_id_ed25519
+          if [[ -f "${RUNNER_WORKER_SSH_KEY_FILE}" ]]; then
+            install -m 600 "${RUNNER_WORKER_SSH_KEY_FILE}" repo/.cd-tmp/worker_id_ed25519
+          elif [[ -n "${{ secrets.WORKER_SSH_KEY }}" ]]; then
+            printf '%s\n' "${{ secrets.WORKER_SSH_KEY }}" > repo/.cd-tmp/worker_id_ed25519
+          else
+            echo "worker ssh key is not available on runner or in GitHub secrets" >&2
+            exit 1
+          fi
           chmod 600 repo/.cd-tmp/worker_id_ed25519
 
       - name: Verify manager toolchain
