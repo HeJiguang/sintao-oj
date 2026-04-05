@@ -54,6 +54,15 @@ if [[ ! -f "$RUNTIME_ENV_FILE" ]]; then
   exit 1
 fi
 
+load_env_file() {
+  local env_file="$1"
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    export "$line"
+  done < "$env_file"
+}
+
 echo "[deploy] stack name : $STACK_NAME"
 echo "[deploy] stack file : $STACK_FILE"
 echo "[deploy] stack env  : $STACK_ENV_FILE"
@@ -61,9 +70,7 @@ echo "[deploy] runtime env: $RUNTIME_ENV_FILE"
 echo "[deploy] build images: $BUILD_LOCAL_IMAGES"
 echo "[deploy] sync worker : $SYNC_WORKER_IMAGES"
 
-set -a
-source "$STACK_ENV_FILE"
-set +a
+load_env_file "$STACK_ENV_FILE"
 
 cd "$REPO_ROOT"
 
