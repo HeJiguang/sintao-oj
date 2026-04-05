@@ -125,6 +125,16 @@ services:
     image: ${JUDGE_IMAGE}
     env_file:
       - ../env/runtime.env
+    volumes:
+      - type: bind
+        source: ${DOCKER_SOCKET_PATH}
+        target: /var/run/docker.sock
+      - type: bind
+        source: ${JUDGE_HOST_USER_CODE_DIR}
+        target: /app/user-code
+      - type: bind
+        source: ${JUDGE_HOST_USER_CODE_POOL_DIR}
+        target: /app/user-code-pool
     networks:
       - backend
     deploy:

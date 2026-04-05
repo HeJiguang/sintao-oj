@@ -1,0 +1,79 @@
+name: prod-diagnose
+
+on:
+  workflow_dispatch:
+
+env:
+  STACK_NAME: onlineoj-prod
+
+jobs:
+  diagnose:
+    name: Diagnose Production Stack
+    runs-on:
+      - self-hosted
+      - linux
+      - x64
+      - syncode-prod
+    steps:
+      - name: Collect manager diagnostics
+        shell: bash
+        run: |
+          set +e
+          echo "=== date ==="
+          date
+          echo "=== docker service ls ==="
+          docker service ls
+          echo "=== docker stack services onlineoj-prod ==="
+          docker stack services "onlineoj-prod"
+          echo "=== docker stack ps onlineoj-prod ==="
+          docker stack ps "onlineoj-prod" --no-trunc
+          echo "=== docker ps ==="
+          docker ps
+          for service in \
+            "onlineoj-prod_nginx" \
+            "onlineoj-prod_web" \
+            "onlineoj-prod_app" \
+            "onlineoj-prod_admin" \
+            "onlineoj-prod_oj-gateway" \
+            "onlineoj-prod_oj-system" \
+            "onlineoj-prod_oj-agent" \
+            "onlineoj-prod_oj-friend" \
+            "onlineoj-prod_oj-job" \
+            "onlineoj-prod_oj-judge"
+          do
+            echo "=== service inspect: ${service} ==="
+            docker service inspect "${service}" --pretty || true
+            echo "=== service ps: ${service} ==="
+            docker service ps "${service}" --no-trunc || true
+            echo "=== service logs: ${service} ==="
+            docker service logs --tail 120 "${service}" || true
+          done
+
+      - name: Prepare worker SSH key
+        if: ${{ secrets.WORKER_SSH_KEY != '' }}
+        shell: bash
+        run: |
+          mkdir -p .cd-tmp
+          printf '%s\n' "${{ secrets.WORKER_SSH_KEY }}" > .cd-tmp/worker_id_ed25519
+          chmod 600 .cd-tmp/worker_id_ed25519
+
+      - name: Collect worker diagnostics
+        if: ${{ secrets.WORKER_SSH_KEY != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh_opts=(
+            -i .cd-tmp/worker_id_ed25519
+            -o StrictHostKeyChecking=accept-new
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=8
+          )
+          ssh "${ssh_opts[@]}" "root@101.96.200.77" 'bash -s' <<'EOF'
+          set +e
+          echo "=== worker date ==="
+          date
+          echo "=== worker docker ps ==="
+          docker ps
+          echo "=== worker docker images (judge/agent) ==="
+          docker images | grep -E 'oj-agent|oj-judge' || true
+          EOF

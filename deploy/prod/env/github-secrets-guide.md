@@ -1,139 +1,97 @@
-# GitHub Secrets Preparation Guide
+# GitHub Secrets Guide
 
-这份文档只回答一个问题：
-GitHub 仓库里的 7 个 Secrets，分别应该填什么。
+This repository now uses a split pipeline:
 
-## 1. 需要创建的 Secrets
+- `ci.yml` runs on GitHub-hosted runners.
+- `cd.yml` runs on the self-hosted runner installed on `101.96.200.76`.
 
-### `REGISTRY_USERNAME`
+The production deploy path no longer depends on GHCR or on GitHub-hosted runners SSHing into the manager for every release.
 
-作用：
-用于登录 GHCR。
-
-建议值：
-
-- 如果镜像推到当前 GitHub 账号名下，直接填你的 GitHub 用户名
-- 如果镜像推到 GitHub 组织名下，填具备包发布权限的账号名
-
-### `REGISTRY_PASSWORD`
-
-作用：
-用于登录 GHCR。
-
-建议值：
-
-- 一个 GitHub Personal Access Token
-- 至少要具备 `write:packages`
-- 如果仓库是私有的，通常也需要 `repo`
+## Required Secrets
 
 ### `DEPLOY_SSH_HOST`
 
-作用：
-CD 登录到哪台服务器执行部署。
+Used only by `bootstrap-runner.yml`.
 
-当前真实值：
+Recommended value:
 
-```env
+```text
 101.96.200.76
 ```
 
-也就是 Swarm manager。
-
 ### `DEPLOY_SSH_USER`
 
-作用：
-SSH 登录用户名。
+Used only by `bootstrap-runner.yml`.
 
-建议值：
+Recommended value:
 
-- 你服务器上实际用于部署的用户
-- 常见是 `root`，但更推荐专门部署用户
+```text
+root
+```
 
 ### `DEPLOY_SSH_KEY`
 
-作用：
-CD 用它通过 SSH 登录 manager。
+Used only by `bootstrap-runner.yml`.
 
-填写内容：
+This must be the private key that can SSH into `101.96.200.76` as `DEPLOY_SSH_USER`.
 
-- 对应 `DEPLOY_SSH_USER` 的私钥全文
-- 一般是 `id_ed25519` 的完整内容
-- 必须包含开头和结尾行
+### `SELF_HOSTED_RUNNER_BOOTSTRAP_TOKEN`
 
-示例格式：
+Used only by `bootstrap-runner.yml`.
 
-```text
------BEGIN OPENSSH PRIVATE KEY-----
-...
------END OPENSSH PRIVATE KEY-----
-```
+This is a temporary GitHub runner registration token for this repository.
+
+### `WORKER_SSH_KEY`
+
+Used by `cd.yml`.
+
+This must be a private key that allows the manager-hosted runner job to copy images to `101.96.200.77`.
+
+If manager and worker already trust the same deploy key, reuse that key here.
 
 ### `STACK_ENV_PROD`
 
-作用：
-决定 stack 级别的镜像名、域名、节点约束。
+Used by `cd.yml`.
 
-填写方式：
+Copy the full content of [stack.env.prod.template](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/env/stack.env.prod.template) into this secret, then replace:
 
-- 直接把 `deploy/prod/env/stack.env.prod.template` 的内容复制进去
-- 其中 `ghcr.io/your-org-or-user` 可以保留不改，CD 会自动替换成当前仓库 owner 的 GHCR 命名空间
-- `sha-REPLACE_ME` 也不需要手改，CD 会自动替换成本次发布 tag
+- `PUBLIC_DOMAIN`
+- `WORKER_CONSTRAINT` if the worker hostname changes
+- `WORKER_SSH_HOST`, `WORKER_SSH_USER`, `WORKER_SSH_PORT` if needed
+- `WORKER_IMAGE_LIST` if more services move onto the worker
+- `JUDGE_HOST_USER_CODE_DIR` and `JUDGE_HOST_USER_CODE_POOL_DIR` if you want different host paths for judge sandbox files
+
+Do not manually replace `sha-REPLACE_ME`. The workflow does that for each release.
 
 ### `RUNTIME_ENV_PROD`
 
-作用：
-决定运行期环境变量。
+Used by `cd.yml`.
 
-填写方式：
+Copy the full content of [runtime.env.prod.template](/D:/Project/OnlineOJ/bite-oj-master/bite-oj-master/deploy/prod/env/runtime.env.prod.template) into this secret and replace the runtime placeholders with real production values.
 
-- 直接把 `deploy/prod/env/runtime.env.prod.template` 的内容复制进去
-- 把里面的占位项替换成真实 prod 值
-- 能放到 Nacos 的业务配置仍建议继续放 Nacos，这里更适合“服务启动必须知道”的连接信息
+This file should stay minimal. The Java business passwords and datasource details should continue to live in Nacos, not be duplicated into GitHub.
 
-## 2. 建议填写顺序
+Keep these runtime bootstrap values:
 
-1. 先填 `DEPLOY_SSH_HOST`
-2. 再填 `DEPLOY_SSH_USER`
-3. 再填 `DEPLOY_SSH_KEY`
-4. 再填 `REGISTRY_USERNAME`
-5. 再填 `REGISTRY_PASSWORD`
-6. 最后填 `STACK_ENV_PROD`
-7. 最后填 `RUNTIME_ENV_PROD`
+- `NACOS_SERVER_ADDR`
+- `NACOS_USERNAME`
+- `NACOS_PASSWORD`
+- `NACOS_NAMESPACE`
+- `NACOS_GROUP`
+- `OJ_AGENT_NACOS_*`
 
-这样最好排错。
+Keep these judge-related values unless you have a deliberate alternative:
 
-原因：
+- `SANDBOX_DOCKER_HOST=unix:///var/run/docker.sock`
+- `SANDBOX_DOCKER_VOLUME=/usr/share/java`
 
-- SSH 不通，后面 secrets 都白填
-- Registry 登不上，镜像推不出去
-- env 文件不对，部署能触发但服务起不来
+## Recommended Setup Order
 
-## 3. 第一次填写后最该检查什么
-
-### SSH 侧
-
-- manager 上能否用对应用户执行 `docker stack deploy`
-- 该用户是否已加入 `docker` 组，或本身就是 `root`
-- `~/onlineoj` 路径是否允许写入
-
-### Registry 侧
-
-- GHCR 中能否创建包
-- PAT 是否真的有 `write:packages`
-
-### Env 侧
-
-- `PUBLIC_DOMAIN` 是否已经解析到入口服务器
-- `NACOS_NAMESPACE` 是否是 prod namespace，不是 dev
-- `AGENT_PUBLIC_BASE_URL` 是否和实际对外访问方式一致
-
-## 4. 一个很实用的判断标准
-
-如果某个值是：
-
-- 部署流程自己生成的，例如镜像 tag
-  - 不要手填死
-- 服务启动时必须拿到的，例如 Nacos / MySQL / Redis 地址
-  - 放 `RUNTIME_ENV_PROD`
-- stack 编排时必须知道的，例如镜像名、节点约束、域名
-  - 放 `STACK_ENV_PROD`
+1. Prepare `STACK_ENV_PROD`.
+2. Prepare `RUNTIME_ENV_PROD`.
+3. Verify SSH key access from manager to worker.
+4. Generate a fresh `SELF_HOSTED_RUNNER_BOOTSTRAP_TOKEN`.
+5. Run `bootstrap-runner.yml`.
+6. Wait for the `syncode-prod` runner to show up in GitHub.
+7. Trigger `cd.yml` manually once.
+8. After the first successful release, let `workflow_run` auto-deploy from `main`.

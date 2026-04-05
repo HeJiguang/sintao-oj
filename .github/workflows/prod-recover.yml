@@ -1,24 +1,22 @@
-name: cd
+name: prod-recover
 
 on:
-  workflow_run:
-    workflows:
-      - ci
-    types:
-      - completed
   workflow_dispatch:
     inputs:
       image_tag:
         description: Optional image tag override
         required: false
         type: string
-
-concurrency:
-  group: cd-prod
-  cancel-in-progress: false
-
-permissions:
-  contents: read
+      rebuild_images:
+        description: Rebuild images on manager before redeploy
+        required: false
+        default: true
+        type: boolean
+      sync_worker_images:
+        description: Re-sync worker images before redeploy
+        required: false
+        default: true
+        type: boolean
 
 env:
   STACK_NAME: onlineoj-prod
@@ -26,17 +24,8 @@ env:
   RUNTIME_ENV_FILE: deploy/prod/env/runtime.env
 
 jobs:
-  release:
-    name: Build And Deploy On Manager
-    if: >-
-      ${{
-        github.event_name == 'workflow_dispatch' ||
-        (
-          github.event_name == 'workflow_run' &&
-          github.event.workflow_run.conclusion == 'success' &&
-          github.event.workflow_run.head_branch == 'main'
-        )
-      }}
+  recover:
+    name: Redeploy Production Stack
     runs-on:
       - self-hosted
       - linux
@@ -45,26 +34,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Resolve deploy metadata
         id: meta
         shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
-            source_sha="${{ github.event.workflow_run.head_sha }}"
-          else
-            source_sha="${GITHUB_SHA}"
-          fi
-
           if [[ -n "${{ github.event.inputs.image_tag }}" ]]; then
             image_tag="${{ github.event.inputs.image_tag }}"
           else
-            image_tag="sha-${source_sha::12}"
+            image_tag="manual-${GITHUB_SHA::12}"
           fi
-
-          echo "source_sha=${source_sha}" >> "$GITHUB_OUTPUT"
           echo "image_tag=${image_tag}" >> "$GITHUB_OUTPUT"
 
       - name: Prepare runtime env files
@@ -75,28 +54,23 @@ jobs:
           sed -i "s#sha-REPLACE_ME#${{ steps.meta.outputs.image_tag }}#g" "${STACK_ENV_FILE}"
 
       - name: Prepare worker SSH key
+        if: ${{ github.event.inputs.sync_worker_images == 'true' }}
         shell: bash
         run: |
           mkdir -p .cd-tmp
           printf '%s\n' "${{ secrets.WORKER_SSH_KEY }}" > .cd-tmp/worker_id_ed25519
           chmod 600 .cd-tmp/worker_id_ed25519
 
-      - name: Verify manager toolchain
-        shell: bash
-        run: |
-          java -version
-          mvn -version
-          docker version
-          docker info
-
-      - name: Build and deploy locally
+      - name: Redeploy locally
         shell: bash
         run: |
           chmod +x deploy/prod/scripts/build-images.sh
           chmod +x deploy/prod/scripts/sync-worker-images.sh
           chmod +x deploy/prod/scripts/deploy.sh
-          BUILD_LOCAL_IMAGES=true \
-          SYNC_WORKER_IMAGES=true \
+          BUILD_LOCAL_IMAGES=${{ github.event.inputs.rebuild_images }}
+          SYNC_WORKER_IMAGES=${{ github.event.inputs.sync_worker_images }}
+          BUILD_LOCAL_IMAGES="$BUILD_LOCAL_IMAGES" \
+          SYNC_WORKER_IMAGES="$SYNC_WORKER_IMAGES" \
           WORKER_SSH_KEY_FILE=.cd-tmp/worker_id_ed25519 \
           STACK_ENV_FILE="${STACK_ENV_FILE}" \
           RUNTIME_ENV_FILE="${RUNTIME_ENV_FILE}" \

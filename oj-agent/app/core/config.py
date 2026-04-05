@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import os
 from pathlib import Path
+import socket
 from typing import Any
 
 from app.core.nacos_config import load_nacos_config as _load_nacos_config
@@ -182,6 +183,42 @@ def _read_globs(config: dict[str, Any]) -> tuple[str, ...]:
     return (DEFAULT_RAG_DOC_GLOB,)
 
 
+def _resolve_default_nacos_ip() -> str:
+    explicit = os.getenv("HOST_IP")
+    if explicit:
+        return explicit
+
+    hostname_ip = os.getenv("HOSTNAME")
+    if hostname_ip:
+        try:
+            resolved = socket.gethostbyname(hostname_ip)
+            if resolved and not resolved.startswith("127."):
+                return resolved
+        except OSError:
+            pass
+
+    server_addr = os.getenv("OJ_AGENT_NACOS_SERVER_ADDR")
+    if server_addr:
+        host = server_addr.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0]
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                sock.connect((host, 8848))
+                resolved = sock.getsockname()[0]
+                if resolved:
+                    return resolved
+        except OSError:
+            pass
+
+    try:
+        resolved = socket.gethostbyname(socket.gethostname())
+        if resolved:
+            return resolved
+    except OSError:
+        pass
+
+    return "127.0.0.1"
+
+
 def load_settings() -> AgentSettings:
     """
     全局配置加载入口函数。
@@ -252,6 +289,6 @@ def load_settings() -> AgentSettings:
         nacos_username=os.getenv("OJ_AGENT_NACOS_USERNAME"),
         nacos_password=os.getenv("OJ_AGENT_NACOS_PASSWORD"),
         nacos_service_name=_read_str(nacos_config, "OJ_AGENT_NACOS_SERVICE_NAME", ("nacos", "service-name"), "oj-agent") or "oj-agent",
-        nacos_ip=_read_str(nacos_config, "OJ_AGENT_NACOS_IP", ("nacos", "ip"), "127.0.0.1") or "127.0.0.1",
+        nacos_ip=_read_str(nacos_config, "OJ_AGENT_NACOS_IP", ("nacos", "ip"), _resolve_default_nacos_ip()) or _resolve_default_nacos_ip(),
         nacos_port=_read_int(nacos_config, "OJ_AGENT_NACOS_PORT", ("nacos", "port"), port),
     )
