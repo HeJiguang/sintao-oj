@@ -50,6 +50,7 @@ function main() {
   assert.match(activeHtml, /md:grid-cols-\[minmax\(0,1fr\)_132px\]/);
   assert.match(activeHtml, /md:w-full/);
   assert.doesNotMatch(activeHtml, /training-task-finish-task-2/);
+  assert.doesNotMatch(activeHtml, /璁粌鍔ㄤ綔/);
 }
 
 main();
