@@ -4,6 +4,7 @@ import * as React from "react";
 
 import type { TrainingTask } from "@aioj/api";
 import { Button, Panel, Tag } from "@aioj/ui";
+
 import { appApiPath, appPublicPath } from "../lib/paths";
 import { getTrainingStatusLabel, getTrainingStatusTone } from "../lib/presentation";
 
@@ -62,34 +63,31 @@ export function TrainingActions({ direction, tasks }: TrainingActionsProps) {
       });
       const payload = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) {
-        throw new Error(payload?.message ?? "完成训练任务失败。");
+        throw new Error(payload?.message ?? "完成任务失败。");
       }
       window.location.reload();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "完成训练任务失败。");
+      setMessage(error instanceof Error ? error.message : "完成任务失败。");
     } finally {
       setLoadingKey(null);
     }
   }
 
   return (
-    <Panel className="border border-white/10 bg-white/[0.02] p-5 backdrop-blur-md">
+    <Panel className="syncode-page-section p-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="kicker">Actions</p>
-          <h3 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">训练动作</h3>
-        </div>
+        <h3 className="text-base font-semibold text-[var(--text-primary)]">任务</h3>
         <Button data-testid="training-generate" onClick={() => void generatePlan()} disabled={loadingKey === "generate"}>
-          {loadingKey === "generate" ? "生成中..." : "生成训练计划"}
+          {loadingKey === "generate" ? "生成中..." : "生成计划"}
         </Button>
       </div>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-4 space-y-3">
         {tasks.map((task) => {
           const href = resolveTaskHref(task);
           return (
-            <div key={task.taskId} className="rounded-[18px] border border-white/10 bg-white/[0.02] px-4 py-4 transition-all duration-300 ease-out hover:border-white/20 hover:bg-white/[0.04]">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div key={task.taskId} className="rounded-[18px] border border-[var(--border-soft)] bg-[var(--surface-3)] px-4 py-4">
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_132px] md:items-center">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-semibold text-[var(--text-primary)]">{task.title}</p>
@@ -97,21 +95,24 @@ export function TrainingActions({ direction, tasks }: TrainingActionsProps) {
                   </div>
                   <p className="mt-2 text-xs leading-6 text-[var(--text-muted)]">{task.focus}</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
+
+                <div data-testid={`training-task-actions-${task.taskId}`} className="flex flex-col gap-2 md:w-full md:items-stretch">
                   {href ? (
                     <a
                       href={href}
-                      className="inline-flex h-9 items-center justify-center rounded-[var(--radius-sm)] border border-white/10 bg-white/[0.02] px-4 text-sm font-medium text-[var(--text-primary)] transition-all duration-300 ease-out hover:border-white/20 hover:bg-white/[0.04]"
+                      className="inline-flex h-9 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border-strong)] bg-[var(--cta-secondary-bg)] px-4 text-sm font-medium text-[var(--text-primary)] transition-all duration-300 ease-out hover:border-[var(--border-focus)] hover:bg-[var(--cta-secondary-hover)] md:w-full"
                     >
-                      进入任务
+                      去做题
                     </a>
                   ) : null}
+
                   {task.rawStatus === TASK_STATUS_PENDING ? (
                     <Button
                       data-testid={`training-task-finish-${task.taskId}`}
                       variant="secondary"
                       onClick={() => void finishTask(task.taskId)}
                       disabled={loadingKey === task.taskId}
+                      className="md:w-full"
                     >
                       {loadingKey === task.taskId ? "提交中..." : "标记完成"}
                     </Button>
