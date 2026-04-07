@@ -32,7 +32,20 @@ foreach ($path in $envPaths) {
     $requiredSnippets = @(
         "NACOS_ENABLED=true",
         "NACOS_CONFIG_ENABLED=true",
-        "NACOS_DISCOVERY_ENABLED=true"
+        "NACOS_DISCOVERY_ENABLED=true",
+        "MYSQL_HOST=",
+        "MYSQL_APP_USER=",
+        "MYSQL_PASSWORD=",
+        "REDIS_HOST=",
+        "REDIS_PASSWORD=",
+        "RABBITMQ_HOST=",
+        "RABBITMQ_DEFAULT_USER=",
+        "RABBITMQ_DEFAULT_PASS=",
+        "OJ_AGENT_NACOS_CONFIG_ENABLED=false",
+        "OJ_AGENT_LLM_BASE_URL=",
+        "OJ_AGENT_LLM_API_KEY=",
+        "OJ_AGENT_CHAT_MODEL=",
+        "OJ_AGENT_TRAINING_MODEL="
     )
 
     foreach ($snippet in $requiredSnippets) {
