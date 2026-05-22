@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requestJson, type ApiEnvelope, unwrapData } from "@aioj/api";
+import { requestJson, type ApiEnvelope, unwrapData, ApiError } from "@aioj/api";
 
 import { ADMIN_ACCESS_TOKEN_COOKIE } from "../../../../lib/server-auth";
 
@@ -17,17 +17,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "管理员账号和密码不能为空。" }, { status: 400 });
   }
 
-  const payload = await requestJson<ApiEnvelope<string>>("/system/sysUser/login", {
-    method: "POST",
-    body: JSON.stringify({ userAccount, password })
-  });
-  const token = unwrapData(payload);
+  try {
+    const payload = await requestJson<ApiEnvelope<string>>("/system/sysUser/login", {
+      method: "POST",
+      body: JSON.stringify({ userAccount, password })
+    });
+    const token = unwrapData(payload);
 
-  const response = NextResponse.json({ ok: true });
-  response.cookies.set(ADMIN_ACCESS_TOKEN_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/admin"
-  });
-  return response;
+    const response = NextResponse.json({ ok: true });
+    response.cookies.set(ADMIN_ACCESS_TOKEN_COOKIE, token, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/"
+    });
+    return response;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return NextResponse.json({ message: error.message || "管理员登录失败。" }, { status: 400 });
+    }
+    return NextResponse.json({ message: "管理员登录失败，请稍后重试。" }, { status: 500 });
+  }
 }

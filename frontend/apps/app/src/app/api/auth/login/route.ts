@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { ACCESS_TOKEN_KEY, requestJson, unwrapData } from "@aioj/api";
-import { resolveApiRouteError } from "../../../../lib/api-route-error";
+import { toApiRouteErrorResponse } from "../../../../lib/api-route-error";
 
 export async function POST(request: Request) {
   try {
@@ -22,7 +22,6 @@ export async function POST(request: Request) {
     });
     return response;
   } catch (error) {
-    const { status, body } = resolveApiRouteError(error, "\u767b\u5f55\u5931\u8d25\u3002");
-    return NextResponse.json(body, { status });
+    return toApiRouteErrorResponse(error, "登录失败，请稍后重试。");
   }
 }

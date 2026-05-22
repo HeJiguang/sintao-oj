@@ -3,10 +3,8 @@
 import * as React from "react";
 import { useMemo, useState, useTransition } from "react";
 import type { UserProfile } from "@aioj/api";
-import { frontendPreviewMode } from "@aioj/config";
 import { Camera, LoaderCircle } from "lucide-react";
 
-import { appApiPath } from "../lib/paths";
 import { Button, Input, Panel, Textarea } from "@aioj/ui";
 
 type ProfileSettingsFormProps = {
@@ -44,13 +42,8 @@ export function ProfileSettingsForm({ profile }: ProfileSettingsFormProps) {
     setMessage(null);
     setError(null);
 
-    if (frontendPreviewMode) {
-      setMessage("当前是前端预览模式，资料改动不会提交到后端。");
-      return;
-    }
-
     startSaving(async () => {
-      const response = await fetch(appApiPath("/user/profile"), {
+      const response = await fetch("/app/api/user/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)
@@ -73,14 +66,10 @@ export function ProfileSettingsForm({ profile }: ProfileSettingsFormProps) {
 
     setMessage(null);
     setError(null);
-    if (frontendPreviewMode) {
-      setMessage("当前是前端预览模式，头像上传已关闭。");
-      return;
-    }
     startUploading(async () => {
       const formData = new FormData();
       formData.append("file", file);
-      const response = await fetch(appApiPath("/user/avatar"), {
+      const response = await fetch("/app/api/user/avatar", {
         method: "POST",
         body: formData
       });
@@ -106,12 +95,12 @@ export function ProfileSettingsForm({ profile }: ProfileSettingsFormProps) {
           </div>
           <div className="space-y-2">
             <div>
-              <p className="kicker">资料</p>
+              <p className="kicker">Profile</p>
               <h3 className="mt-1 text-xl font-semibold text-[var(--text-primary)]">个人资料</h3>
             </div>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-[14px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text-primary)] transition hover:border-[var(--border-strong)]">
               {isUploading ? <LoaderCircle size={14} className="animate-spin" /> : <Camera size={14} />}
-              {frontendPreviewMode ? "预览模式下不可上传" : "上传头像"}
+              上传头像
               <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
             </label>
           </div>
@@ -168,8 +157,9 @@ export function ProfileSettingsForm({ profile }: ProfileSettingsFormProps) {
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={isSaving || isUploading}>
             {isSaving ? <LoaderCircle size={14} className="animate-spin" /> : null}
-            {frontendPreviewMode ? "预览模式下不可保存" : "保存资料"}
+            保存资料
           </Button>
+          <p className="text-sm text-[var(--text-muted)]">头像会通过现有 OSS 上传接口保存，昵称与简介直接写回用户资料。</p>
         </div>
       </form>
     </Panel>

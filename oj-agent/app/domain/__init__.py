@@ -1,2 +1,1 @@
-"""Typed platform domain models for the run-centric agent runtime."""
-
+"""Domain models and in-memory stores."""

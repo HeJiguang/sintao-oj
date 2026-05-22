@@ -23,6 +23,8 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 sandbox:
+  execution:
+    mode: standalone
   docker:
     volume: /usr/share/java
 

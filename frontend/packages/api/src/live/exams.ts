@@ -1,7 +1,7 @@
 import type { ApiEnvelope, TableEnvelope } from "../client";
 import { requestJson, unwrapData, unwrapTable } from "../client";
-import type { ExamDetail, ExamSummary } from "../contracts";
-import { examDetails } from "../mock/training";
+import type { ExamSummary } from "../contracts";
+import { exams } from "../mock/training";
 
 type BackendExamRow = {
   examId?: string | number | null;
@@ -15,38 +15,45 @@ type BackendExamRow = {
   status?: number | string | null;
 };
 
-const UPCOMING_EXAM_STATUS: ExamSummary["status"] = examDetails["exam-sprint-01"].status;
-const ACTIVE_EXAM_STATUS: ExamSummary["status"] = examDetails["exam-checkpoint-02"].status;
-const FINISHED_EXAM_STATUS: ExamSummary["status"] = examDetails["exam-review-03"].status;
+function parseTime(value?: string | null) {
+  if (!value) return null;
+  const date = new Date(value.replace(" ", "T"));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
-function normalizeExamStatus(status?: string | number | null): ExamSummary["status"] {
-  if (status === 1 || status === "1" || status === ACTIVE_EXAM_STATUS) return ACTIVE_EXAM_STATUS;
-  if (status === 2 || status === "2" || status === FINISHED_EXAM_STATUS) return FINISHED_EXAM_STATUS;
-  return UPCOMING_EXAM_STATUS;
+function normalizeExamStatus(row: BackendExamRow): ExamSummary["status"] {
+  if (row.status === 1 || row.status === "1" || row.status === "进行中") return "进行中";
+  if (row.status === 2 || row.status === "2" || row.status === "已结束") return "已结束";
+
+  const start = parseTime(row.startTime ?? row.examStartTime);
+  const end = parseTime(row.endTime ?? row.examEndTime);
+  const now = new Date();
+
+  if (start && now < start) return "未开始";
+  if (end && now > end) return "已结束";
+  if (start && end && now >= start && now <= end) return "进行中";
+  return "未开始";
+}
+
+function calculateDurationMinutes(row: BackendExamRow) {
+  if (row.durationMinutes != null) return row.durationMinutes;
+
+  const start = parseTime(row.startTime ?? row.examStartTime);
+  const end = parseTime(row.endTime ?? row.examEndTime);
+  if (!start || !end) return 0;
+
+  return Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000));
 }
 
 function mapExamRow(row: BackendExamRow): ExamSummary {
   return {
     examId: row.examId ? String(row.examId) : "unknown-exam",
     title: row.title ?? "未命名考试",
-    status: normalizeExamStatus(row.status),
+    status: normalizeExamStatus(row),
     startTime: row.startTime ?? row.examStartTime ?? "--",
     endTime: row.endTime ?? row.examEndTime ?? "--",
-    durationMinutes: row.durationMinutes ?? 0,
+    durationMinutes: calculateDurationMinutes(row),
     questionCount: row.questionCount ?? 0
-  };
-}
-
-function buildLiveFallbackExamDetail(examId: string): ExamDetail {
-  return {
-    examId,
-    title: "考试暂不可用",
-    status: UPCOMING_EXAM_STATUS,
-    startTime: "--",
-    endTime: "--",
-    durationMinutes: 0,
-    questionCount: 0,
-    firstQuestionId: undefined
   };
 }
 
@@ -55,32 +62,13 @@ export async function fetchLiveExamList() {
   return unwrapTable(payload).rows.map(mapExamRow);
 }
 
-export async function fetchLiveExamDetail(examId: string, token?: string | null): Promise<ExamDetail> {
-  const list = await fetchLiveExamList();
-  const base = list.find((item) => item.examId === examId) ?? buildLiveFallbackExamDetail(examId);
-  let firstQuestionId: string | undefined;
-
-  if (token) {
-    try {
-      const firstQuestionPayload = await requestJson<ApiEnvelope<string>>(
-        `/friend/exam/getFirstQuestion?examId=${encodeURIComponent(examId)}`,
-        { token }
-      );
-      const resolvedQuestionId = unwrapData(firstQuestionPayload);
-      if (resolvedQuestionId && /^\d+$/.test(String(resolvedQuestionId))) {
-        firstQuestionId = String(resolvedQuestionId);
-      }
-    } catch {
-      // Keep the exam shell available instead of falling back to mock string IDs.
-    }
-  }
-
-  return {
-    ...base,
-    firstQuestionId
-  };
+export async function fetchExamFirstQuestion(examId: string, token: string) {
+  const payload = await requestJson<ApiEnvelope<string>>(`/friend/exam/getFirstQuestion?examId=${encodeURIComponent(examId)}`, {
+    token
+  });
+  return unwrapData(payload);
 }
 
-export function getExamMockFallback(examId?: string): ExamDetail {
-  return examDetails[examId ?? ""] ?? examDetails["exam-sprint-01"];
+export function getExamMockFallback(examId?: string) {
+  return exams.find((item) => item.examId === examId) ?? exams[0];
 }

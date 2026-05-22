@@ -5,9 +5,6 @@ import { trainingSnapshot } from "../mock/training";
 
 type BackendTrainingTask = {
   taskId?: string | number | null;
-  taskType?: string | null;
-  questionId?: string | number | null;
-  examId?: string | number | null;
   titleSnapshot?: string | null;
   taskStatus?: number | null;
   knowledgeTagsSnapshot?: string | null;
@@ -26,9 +23,9 @@ type BackendTrainingCurrent = {
 };
 
 function normalizeTaskStatus(status?: number | null): TrainingSnapshot["tasks"][number]["status"] {
-  if (status === 1) return "进行中";
-  if (status === 2) return "已完成";
-  return "待开始";
+  if (status === 1) return "杩涜涓?" as TrainingSnapshot["tasks"][number]["status"];
+  if (status === 2) return "宸插畬鎴?" as TrainingSnapshot["tasks"][number]["status"];
+  return "寰呭紑濮?" as TrainingSnapshot["tasks"][number]["status"];
 }
 
 function splitPoints(value?: string | null) {
@@ -45,12 +42,8 @@ export async function fetchLiveTrainingSnapshot(token?: string | null) {
 
   const tasks = (data.tasks ?? []).map((task, index) => ({
     taskId: task.taskId ? String(task.taskId) : `task-${index + 1}`,
-    taskType: task.taskType ?? undefined,
-    questionId: task.questionId != null ? String(task.questionId) : undefined,
-    examId: task.examId != null ? String(task.examId) : undefined,
     title: task.titleSnapshot ?? `训练任务 ${index + 1}`,
     status: normalizeTaskStatus(task.taskStatus),
-    rawStatus: Number(task.taskStatus ?? 0),
     focus: task.knowledgeTagsSnapshot ?? "训练任务",
     difficulty: "Medium" as const
   }));

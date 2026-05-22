@@ -80,10 +80,14 @@ Notes:
   `OJ_JUDGE_BASE_URL` must match the actual local judge address.
 - `oj-gateway` routes to local `oj-friend` and `oj-agent`, so `OJ_FRIEND_BASE_URL`
   and `AI_GATEWAY_URI` must match the actual addresses.
+- Keep `AGENT_PUBLIC_BASE_URL` pointing at the Python `oj-agent` itself for Java-side
+  training-plan calls, and use `SYNCODE_AGENT_BASE_URL=http://127.0.0.1:19090` so the
+  frontend agent panel goes through `oj-gateway /ai/**` during local integration.
 - `local-env.ps1` is wired for the current local-test setup: cloud MySQL plus
   local Redis, RabbitMQ, Elasticsearch, and local application services.
 - The checked-in template `local-env.example.ps1` uses agent port `8016` to avoid
-  a common dirty local listener on `8015`.
+  a common dirty local listener on `8015`, while the frontend keeps talking to the
+  gateway on `19090`.
 - `oj-job` can start locally, but its registration to `xxl-job-admin` may still depend
   on the admin-side access token configuration.
 - Local login / mail testing uses `MAIL_IS_SEND=false` by default, so email codes are

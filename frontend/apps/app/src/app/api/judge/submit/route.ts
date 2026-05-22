@@ -9,7 +9,7 @@ import {
   unwrapData
 } from "@aioj/api";
 
-import { buildJudgeSubmitPayload } from "../../../../lib/judge-route-contracts";
+import { toApiRouteErrorResponse } from "../../../../lib/api-route-error";
 import { getServerAccessToken } from "../../../../lib/server-auth";
 
 type SubmitBody = {
@@ -25,32 +25,41 @@ type AsyncSubmitResponse = {
 };
 
 export async function POST(request: Request) {
-  const token = await getServerAccessToken();
-  if (!token) {
-    return NextResponse.json({ message: "未登录，无法提交判题。" }, { status: 401 });
+  try {
+    const token = await getServerAccessToken();
+    if (!token) {
+      return NextResponse.json({ message: "未登录，无法提交判题。" }, { status: 401 });
+    }
+
+    const body = (await request.json()) as SubmitBody;
+    const questionId = Number(body.questionId);
+    const examId = body.examId ? Number(body.examId) : undefined;
+    const language = body.language;
+    const code = body.code?.trim();
+
+    if (!Number.isFinite(questionId)) {
+      return NextResponse.json({ message: "questionId 必须是后端可识别的数字 ID。" }, { status: 400 });
+    }
+    if (!language || !isJudgeLanguageSupported(language)) {
+      return NextResponse.json({ message: "当前真实判题仅支持 Java。" }, { status: 400 });
+    }
+    if (!code) {
+      return NextResponse.json({ message: "提交代码不能为空。" }, { status: 400 });
+    }
+
+    const payload = await requestJson<ApiEnvelope<AsyncSubmitResponse>>("/friend/user/question/rabbit/submit", {
+      method: "POST",
+      token,
+      body: JSON.stringify({
+        questionId,
+        examId: Number.isFinite(examId) ? examId : undefined,
+        programType: programTypeFromLanguage(language),
+        userCode: code
+      })
+    });
+
+    return NextResponse.json(unwrapData(payload));
+  } catch (error) {
+    return toApiRouteErrorResponse(error, "提交判题失败，请稍后重试。");
   }
-
-  const body = (await request.json()) as SubmitBody;
-  const language = body.language;
-  const code = body.code?.trim();
-
-  if (!language || !isJudgeLanguageSupported(language)) {
-    return NextResponse.json({ message: "当前真实判题仅支持 Java。" }, { status: 400 });
-  }
-  if (!code) {
-    return NextResponse.json({ message: "提交代码不能为空。" }, { status: 400 });
-  }
-
-  const payloadBody = buildJudgeSubmitPayload(body, programTypeFromLanguage(language), code);
-  if (!payloadBody) {
-    return NextResponse.json({ message: "questionId 必须是后端可识别的数字 ID。" }, { status: 400 });
-  }
-
-  const payload = await requestJson<ApiEnvelope<AsyncSubmitResponse>>("/friend/user/question/rabbit/submit", {
-    method: "POST",
-    token,
-    body: JSON.stringify(payloadBody)
-  });
-
-  return NextResponse.json(unwrapData(payload));
 }

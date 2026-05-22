@@ -1,13 +1,17 @@
 $ErrorActionPreference = "Stop"
 
 $agentPort = if ($env:OJ_AGENT_PORT) { [int]$env:OJ_AGENT_PORT } else { 8016 }
+$systemPort = if ($env:OJ_SYSTEM_PORT) { [int]$env:OJ_SYSTEM_PORT } else { 9201 }
+$friendPort = if ($env:OJ_FRIEND_PORT) { [int]$env:OJ_FRIEND_PORT } else { 9202 }
+$jobPort = if ($env:OJ_JOB_PORT) { [int]$env:OJ_JOB_PORT } else { 9203 }
+$judgePort = if ($env:OJ_JUDGE_PORT) { [int]$env:OJ_JUDGE_PORT } else { 9204 }
 
 $targets = @(
     @{ Name = "gateway"; Port = 19090; Path = "/friend/doc.html" },
-    @{ Name = "oj-system"; Port = 9201; Path = "/doc.html" },
-    @{ Name = "oj-friend"; Port = 9202; Path = "/doc.html" },
-    @{ Name = "oj-job"; Port = 9203; Path = "/" },
-    @{ Name = "oj-judge"; Port = 9204; Path = "/doc.html" },
+    @{ Name = "oj-system"; Port = $systemPort; Path = "/doc.html" },
+    @{ Name = "oj-friend"; Port = $friendPort; Path = "/doc.html" },
+    @{ Name = "oj-job"; Port = $jobPort; Path = "/" },
+    @{ Name = "oj-judge"; Port = $judgePort; Path = "/doc.html" },
     @{ Name = "oj-agent"; Port = $agentPort; Path = "/docs" }
 )
 

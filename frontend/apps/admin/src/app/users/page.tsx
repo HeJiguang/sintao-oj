@@ -14,7 +14,7 @@ export default async function AdminUsersPage() {
     <AdminShell
       adminName={admin.nickName}
       title="用户管理"
-      description="用户管理页重点展示状态、邮箱和方向信息，并提供最基础的冻结/恢复操作。"
+      description="用户管理页重点展示状态、邮箱和方向信息，并提供基础的冻结与恢复操作。"
     >
       <Panel className="overflow-hidden">
         <div className="border-b border-[var(--border-soft)] px-5 py-4">

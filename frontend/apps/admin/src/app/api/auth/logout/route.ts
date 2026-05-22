@@ -15,15 +15,15 @@ export async function POST(request: Request) {
         token
       });
     } catch {
-      // ignore logout errors; local cookie cleanup is the primary requirement
+      // Ignore backend logout failures and clear the local session anyway.
     }
   }
 
-  const response = NextResponse.redirect(new URL("/admin/login", request.url));
+  const response = NextResponse.redirect(new URL("/login", request.url));
   response.cookies.set(ADMIN_ACCESS_TOKEN_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
-    path: "/admin",
+    path: "/",
     maxAge: 0
   });
   return response;

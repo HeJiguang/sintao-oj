@@ -9,6 +9,7 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean;
 
 @Configuration
 @EnableWebSocket
@@ -37,6 +38,15 @@ public class JudgeResultWebSocketConfig implements WebSocketConfigurer {
         registry.addHandler(handler, "/ws/judge/result") // friend内部的WebSocket路径
                 .addInterceptors(handshakeInterceptor) // 在升级为WebSocket之前，先走拦截器做校验
                 .setAllowedOrigins("*"); // 允许跨域来源
+    }
+
+    @Bean
+    public ServletServerContainerFactoryBean createWebSocketContainer() {
+        ServletServerContainerFactoryBean container = new ServletServerContainerFactoryBean();
+        container.setMaxTextMessageBufferSize(8192);
+        container.setMaxBinaryMessageBufferSize(8192);
+        container.setMaxSessionIdleTimeout(60000L);  
+        return container;
     }
 
     @Bean

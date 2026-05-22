@@ -1,1 +1,1 @@
-"""FastAPI routers for the OJ agent."""
+"""API routers for the OJ agent."""

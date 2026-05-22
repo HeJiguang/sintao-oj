@@ -2,7 +2,7 @@
 -- Usage:
 --   mysql -h <host> -u <user> -p bitoj_dev < reset-and-init-complete.sql
 -- This script drops the current development tables and then reloads
--- init-complete.sql from an absolute path on the machine where mysql runs.
+-- init-db.sql from an absolute path on the machine where mysql runs.
 
 USE bitoj_dev;
 
@@ -24,4 +24,4 @@ DROP TABLE IF EXISTS tb_sys_user;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
-SOURCE /root/sql-import/init-complete.sql;
+SOURCE /root/sql-import/init-db.sql;

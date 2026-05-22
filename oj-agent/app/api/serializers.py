@@ -1,4 +1,5 @@
 def to_api_model(value):
+    """把内部 snake_case 字典转换成前端使用的 camelCase 形状。"""
     if isinstance(value, list):
         return [to_api_model(item) for item in value]
     if isinstance(value, dict):

@@ -1,10 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import type { ApiEnvelope } from "@aioj/api";
+import type { ApiEnvelope, SubmissionRecord } from "@aioj/api";
 import { requestJson, unwrapData } from "@aioj/api";
 
-import { mapJudgeHistoryRow, type BackendSubmissionRow } from "../../../../lib/judge-history";
+import { normalizeJudgeOutcome } from "../../../../lib/judge-result";
 import { getServerAccessToken } from "../../../../lib/server-auth";
+
+type BackendSubmissionRow = {
+  submitId?: string | number | null;
+  programType?: number | null;
+  pass?: number | null;
+  score?: number | null;
+  exeMessage?: string | null;
+  useTime?: number | null;
+  useMemory?: number | null;
+  createTime?: string | null;
+  updateTime?: string | null;
+};
+
+function mapProgramType(programType?: number | null) {
+  if (programType === 0) return "Java";
+  if (programType === 1) return "C++";
+  if (programType === 2) return "Go";
+  return "Java";
+}
+
+function mapSubmission(row: BackendSubmissionRow, index: number): SubmissionRecord {
+  const outcome = normalizeJudgeOutcome({
+    pass: row.pass,
+    exeMessage: row.exeMessage
+  });
+
+  return {
+    submissionId: row.submitId ? String(row.submitId) : `submission-${index + 1}`,
+    status: outcome.status,
+    language: mapProgramType(row.programType),
+    runtime: row.useTime != null ? `${row.useTime} ms` : "--",
+    memory: row.useMemory != null ? `${row.useMemory} KB` : "--",
+    submittedAt: (row.createTime ?? row.updateTime ?? "").replace("T", " ") || "刚刚",
+    notes: outcome.message
+  };
+}
 
 export async function GET(request: NextRequest) {
   const token = await getServerAccessToken();
@@ -25,5 +61,5 @@ export async function GET(request: NextRequest) {
     { token }
   );
 
-  return NextResponse.json(unwrapData(payload).map(mapJudgeHistoryRow));
+  return NextResponse.json(unwrapData(payload).map(mapSubmission));
 }

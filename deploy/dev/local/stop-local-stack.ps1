@@ -4,6 +4,10 @@ $frontendWebPort = if ($env:FRONTEND_WEB_PORT) { [int]$env:FRONTEND_WEB_PORT } e
 $frontendAppPort = if ($env:FRONTEND_APP_PORT) { [int]$env:FRONTEND_APP_PORT } else { 4201 }
 $frontendAdminPort = if ($env:FRONTEND_ADMIN_PORT) { [int]$env:FRONTEND_ADMIN_PORT } else { 4002 }
 $agentPort = if ($env:OJ_AGENT_PORT) { [int]$env:OJ_AGENT_PORT } else { 8016 }
+$systemPort = if ($env:OJ_SYSTEM_PORT) { [int]$env:OJ_SYSTEM_PORT } else { 9201 }
+$friendPort = if ($env:OJ_FRIEND_PORT) { [int]$env:OJ_FRIEND_PORT } else { 9202 }
+$jobPort = if ($env:OJ_JOB_PORT) { [int]$env:OJ_JOB_PORT } else { 9203 }
+$judgePort = if ($env:OJ_JUDGE_PORT) { [int]$env:OJ_JUDGE_PORT } else { 9204 }
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path $PSScriptRoot))
 $runtimeRoot = Join-Path $repoRoot "logs\local-runtime"
@@ -14,10 +18,10 @@ $services = @(
     @{ Name = "frontend-admin"; Port = $frontendAdminPort },
     @{ Name = "oj-agent"; Port = $agentPort },
     @{ Name = "oj-gateway"; Port = 19090 },
-    @{ Name = "oj-system"; Port = 9201 },
-    @{ Name = "oj-friend"; Port = 9202 },
-    @{ Name = "oj-job"; Port = 9203 },
-    @{ Name = "oj-judge"; Port = 9204 }
+    @{ Name = "oj-system"; Port = $systemPort },
+    @{ Name = "oj-friend"; Port = $friendPort },
+    @{ Name = "oj-job"; Port = $jobPort },
+    @{ Name = "oj-judge"; Port = $judgePort }
 )
 
 function Stop-ByPidFile {

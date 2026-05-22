@@ -4,9 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 
-import { frontendPreviewMode } from "@aioj/config";
 import type { AdminQuestionDetail } from "../lib/admin-api";
-import { adminApiPath, adminInternalPath } from "../lib/paths";
 import { Button, Input, Panel, Textarea } from "@aioj/ui";
 
 type AdminQuestionEditorProps = {
@@ -44,15 +42,11 @@ export function AdminQuestionEditor({ question }: AdminQuestionEditorProps) {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (frontendPreviewMode) {
-      setError("当前是前端预览模式，题目改动不会提交到后端。");
-      return;
-    }
     setSubmitting(true);
     setError(null);
 
     try {
-      const response = await fetch(adminApiPath("/questions"), {
+      const response = await fetch("/api/questions", {
         method: question ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -68,7 +62,7 @@ export function AdminQuestionEditor({ question }: AdminQuestionEditorProps) {
       if (!response.ok) {
         throw new Error(payload?.message ?? "题目保存失败。");
       }
-      router.push(adminInternalPath("/questions"));
+        router.push("/questions");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "题目保存失败。");
@@ -79,21 +73,17 @@ export function AdminQuestionEditor({ question }: AdminQuestionEditorProps) {
 
   async function handleDelete() {
     if (!question?.questionId || !window.confirm("确认删除这道题目吗？")) return;
-    if (frontendPreviewMode) {
-      setError("当前是前端预览模式，删除操作已禁用。");
-      return;
-    }
     setSubmitting(true);
     setError(null);
     try {
-      const response = await fetch(`${adminApiPath("/questions")}?questionId=${encodeURIComponent(question.questionId)}`, {
+      const response = await fetch(`/api/questions?questionId=${encodeURIComponent(question.questionId)}`, {
         method: "DELETE"
       });
       const payload = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) {
         throw new Error(payload?.message ?? "题目删除失败。");
       }
-      router.push(adminInternalPath("/questions"));
+        router.push("/questions");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "题目删除失败。");
@@ -169,11 +159,11 @@ export function AdminQuestionEditor({ question }: AdminQuestionEditorProps) {
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" disabled={submitting}>
             {submitting ? <LoaderCircle size={14} className="animate-spin" /> : null}
-            {frontendPreviewMode ? "预览模式下不可保存" : "保存题目"}
+            保存题目
           </Button>
           {question ? (
             <Button type="button" variant="secondary" disabled={submitting} onClick={handleDelete}>
-              {frontendPreviewMode ? "预览模式下不可删除" : "删除题目"}
+              删除题目
             </Button>
           ) : null}
         </div>

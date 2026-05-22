@@ -1,0 +1,68 @@
+{
+  "runName": "2026-04-07-polling-vs-websocket",
+  "startedAt": "2026-04-07T06:00:42.809Z",
+  "completedAt": "2026-04-07T06:00:44.861Z",
+  "baseUrl": "http://127.0.0.1:19090",
+  "questionId": 99992,
+  "examId": null,
+  "samples": 1,
+  "pollIntervalMs": 1500,
+  "pollMaxAttempts": 6,
+  "timeoutMs": 15000,
+  "sampleResults": [
+    {
+      "sample": 1,
+      "requestId": "a77fca4e194c4c58ad52db629095f2f6",
+      "acceptedAt": "2026-04-07T06:00:43.128Z",
+      "ws": {
+        "ok": false,
+        "mode": "ws",
+        "requestId": "a77fca4e194c4c58ad52db629095f2f6",
+        "error": "WebSocket closed before final result arrived",
+        "finishedAt": null,
+        "latencyMs": null
+      },
+      "poll": {
+        "ok": true,
+        "mode": "poll",
+        "pass": 1,
+        "pollRequests": 2,
+        "finishedAt": 1775541644861,
+        "latencyMs": 1733
+      },
+      "deltaMs": null
+    }
+  ],
+  "summary": {
+    "ws": {
+      "totalSamples": 1,
+      "successCount": 0,
+      "successRatePct": 0,
+      "avgMs": null,
+      "p95Ms": null,
+      "p99Ms": null,
+      "minMs": null,
+      "maxMs": null
+    },
+    "poll": {
+      "totalSamples": 1,
+      "successCount": 1,
+      "successRatePct": 100,
+      "avgMs": 1733,
+      "p95Ms": 1733,
+      "p99Ms": 1733,
+      "minMs": 1733,
+      "maxMs": 1733,
+      "avgPollRequests": 2,
+      "maxPollRequests": 2
+    },
+    "comparison": {
+      "pairedSuccessCount": 0,
+      "avgDeltaMs": null,
+      "avgDeltaPct": null,
+      "p95DeltaMs": null,
+      "p95DeltaPct": null,
+      "avgPollRequests": null
+    }
+  }
+}

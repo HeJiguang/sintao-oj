@@ -23,6 +23,8 @@ import com.sintao.judge.service.ISandboxPoolService;
 import com.sintao.judge.service.ISandboxService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -35,17 +37,26 @@ import java.util.UUID;
 @Slf4j
 public class JudgeServiceImpl implements IJudgeService {
 
+    private static final String SANDBOX_MODE_POOL = "pool";
+
+    private static final String SANDBOX_MODE_STANDALONE = "standalone";
+
+    private static final String SANDBOX_MODE_AUTO = "auto";
+
     @Autowired
     private ISandboxService sandboxService;
 
     @Autowired
-    private ISandboxPoolService sandboxPoolService;
+    private ObjectProvider<ISandboxPoolService> sandboxPoolServiceProvider;
 
     @Autowired
     private UserSubmitMapper userSubmitMapper;
 
     @Autowired
     private JudgeResultPushService judgeResultPushService;
+
+    @Value("${sandbox.execution.mode:auto}")
+    private String sandboxExecutionMode;
 
     @Override
     public UserQuestionResultVO doJudgeJavaCode(JudgeSubmitDTO judgeSubmitDTO) {
@@ -120,7 +131,29 @@ public class JudgeServiceImpl implements IJudgeService {
     }
 
     private SandBoxExecuteResult executeJavaCode(JudgeSubmitDTO judgeSubmitDTO) {
+        String mode = sandboxExecutionMode == null ? SANDBOX_MODE_AUTO : sandboxExecutionMode.trim().toLowerCase();
+        ISandboxPoolService sandboxPoolService = sandboxPoolServiceProvider.getIfAvailable();
+        if (SANDBOX_MODE_POOL.equals(mode)) {
+            if (sandboxPoolService == null) {
+                throw new IllegalStateException("Sandbox pool service is not available in pool mode");
+            }
+            return sandboxPoolService.exeJavaCode(
+                    judgeSubmitDTO.getUserId(),
+                    judgeSubmitDTO.getUserCode(),
+                    judgeSubmitDTO.getInputList()
+            );
+        }
+        if (SANDBOX_MODE_STANDALONE.equals(mode)) {
+            return sandboxService.exeJavaCode(
+                    judgeSubmitDTO.getUserId(),
+                    judgeSubmitDTO.getUserCode(),
+                    judgeSubmitDTO.getInputList()
+            );
+        }
         try {
+            if (sandboxPoolService == null) {
+                throw new IllegalStateException("Sandbox pool service is not available in auto mode");
+            }
             return sandboxPoolService.exeJavaCode(
                     judgeSubmitDTO.getUserId(),
                     judgeSubmitDTO.getUserCode(),

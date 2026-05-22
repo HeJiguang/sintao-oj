@@ -1,21 +1,25 @@
 import * as React from "react";
-import { ArrowRight, BookOpen, Clock3, Flame, Settings, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, Clock3, Flame, Settings } from "lucide-react";
 import { getPublicMessages, getSubmissionHistory, getTrainingSnapshot, getUserProfile } from "@aioj/api";
-import { frontendPreviewMode } from "@aioj/config";
 import { redirect } from "next/navigation";
 
 import { AnnouncementCenter } from "../../components/announcement-center";
 import { AppShell } from "../../components/app-shell";
 import { SubmissionHeatmap } from "../../components/submission-heatmap";
-import { appInternalPath, appPublicPath } from "../../lib/paths";
-import { getTrainingStatusLabel, getTrainingStatusTone, withFallback } from "../../lib/presentation";
 import { getServerAccessToken } from "../../lib/server-auth";
 import { Panel, Tag } from "@aioj/ui";
 
+function toneForTrainingStatus(status: string) {
+  const normalized = String(status);
+  if (normalized.includes("畬")) return "success" as const;
+  if (normalized.includes("杩") || normalized.includes("行")) return "accent" as const;
+  return "default" as const;
+}
+
 export default async function ProfilePage() {
   const token = await getServerAccessToken();
-  if (!token && !frontendPreviewMode) {
-    redirect(appInternalPath("/login"));
+  if (!token) {
+    redirect("/app/login");
   }
 
   const [profile, training, messages, submissions] = await Promise.all([
@@ -25,19 +29,15 @@ export default async function ProfilePage() {
     getSubmissionHistory(undefined, token)
   ]);
 
-  const focusLabel = withFallback(training.tasks[0]?.focus, withFallback(training.direction, "待设置训练方向"));
-  const headline = withFallback(profile.headline, "");
-  const nickName = withFallback(profile.nickName, "未设置昵称");
-  const weeklyGoal = withFallback(training.weeklyGoal, "登录后生成个性化训练计划");
+  const focusLabel = training.tasks[0]?.focus || training.direction || "待设置训练方向";
 
   return (
     <AppShell
-      demoMode={!token}
       rail={
         <>
           <AnnouncementCenter messages={messages.slice(0, 3)} />
           <Panel className="p-4">
-            <p className="kicker">快捷入口</p>
+            <p className="kicker">Quick Access</p>
             <div className="mt-3 space-y-2">
               {[
                 { label: "进入设置", href: "/app/settings", icon: <Settings size={14} /> },
@@ -45,8 +45,8 @@ export default async function ProfilePage() {
               ].map((item) => (
                 <a
                   key={item.label}
-                  href={item.href.startsWith("/app/") ? appPublicPath(item.href.slice(4)) : item.href}
-                  className="flex items-center justify-between rounded-[16px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text-primary)] transition-all duration-300 ease-out hover:border-[var(--border-strong)] hover:bg-[var(--surface-1)]"
+                  href={item.href}
+                  className="flex items-center justify-between rounded-[16px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text-primary)] transition hover:border-[var(--border-strong)]"
                 >
                   <span className="flex items-center gap-2">
                     {item.icon}
@@ -60,20 +60,22 @@ export default async function ProfilePage() {
         </>
       }
     >
-      <Panel className="hero-grid overflow-hidden p-6 md:p-7" tone="strong">
+      <Panel className="p-6" tone="strong">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-2)] text-2xl font-semibold text-[var(--text-primary)]">
               {profile.headImage ? (
-                <img src={profile.headImage} alt={nickName} className="h-full w-full object-cover" />
+                <img src={profile.headImage} alt={profile.nickName} className="h-full w-full object-cover" />
               ) : (
-                nickName.slice(0, 1).toUpperCase()
+                (profile.nickName || "S").slice(0, 1).toUpperCase()
               )}
             </div>
             <div>
-              <p className="kicker">我的</p>
-              <h1 className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">{nickName}</h1>
-              {headline ? <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">{headline}</p> : null}
+              <p className="kicker">Profile</p>
+              <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--text-primary)]">{profile.nickName || "未设置昵称"}</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">
+                {profile.headline || "还没有填写个人简介，可以去设置页补充你的方向与目标。"}
+              </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Tag tone="accent">{focusLabel}</Tag>
                 {profile.schoolName ? <Tag>{profile.schoolName}</Tag> : null}
@@ -82,7 +84,7 @@ export default async function ProfilePage() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[420px]">
+          <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-[20px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-4 py-3">
               <p className="text-xs text-[var(--text-muted)]">已解题数</p>
               <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{profile.solvedCount}</p>
@@ -100,30 +102,12 @@ export default async function ProfilePage() {
             </div>
           </div>
         </div>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-3">
-          <div className="rounded-[18px] border border-[var(--border-soft)] bg-white/[0.03] px-4 py-4">
-            <p className="text-xs text-[var(--text-muted)]">当前焦点</p>
-            <p className="mt-2 text-sm font-semibold leading-6 text-[var(--text-primary)]">{focusLabel}</p>
-          </div>
-          <div className="rounded-[18px] border border-[var(--border-soft)] bg-white/[0.03] px-4 py-4">
-            <p className="text-xs text-[var(--text-muted)]">本周目标</p>
-            <p className="mt-2 text-sm font-semibold leading-6 text-[var(--text-primary)]">{weeklyGoal}</p>
-          </div>
-          <div className="rounded-[18px] border border-[var(--border-soft)] bg-white/[0.03] px-4 py-4">
-            <p className="text-xs text-[var(--text-muted)]">建议动作</p>
-            <a href={appPublicPath("/training")} className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] transition-opacity duration-300 ease-out hover:opacity-80">
-              <Sparkles size={14} />
-              去训练
-            </a>
-          </div>
-        </div>
       </Panel>
 
       <Panel className="p-6">
         <div className="mb-5 flex items-center justify-between">
           <div>
-            <p className="kicker">提交</p>
+            <p className="kicker">Activity</p>
             <h2 className="mt-1 text-xl font-semibold text-[var(--text-primary)]">提交热力图</h2>
           </div>
           <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
@@ -137,7 +121,7 @@ export default async function ProfilePage() {
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <Panel className="overflow-hidden p-0">
           <div className="border-b border-[var(--border-soft)] px-6 py-5">
-            <p className="kicker">记录</p>
+            <p className="kicker">Recent</p>
             <h2 className="mt-1 text-xl font-semibold text-[var(--text-primary)]">最近提交</h2>
           </div>
           <div className="divide-y divide-[var(--border-soft)]">
@@ -166,18 +150,20 @@ export default async function ProfilePage() {
 
         <div className="space-y-6">
           <Panel className="p-6">
-            <p className="kicker">训练</p>
+            <p className="kicker">Training</p>
             <h2 className="mt-1 text-xl font-semibold text-[var(--text-primary)]">{training.title}</h2>
             <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
-              {withFallback(training.direction, "待设置训练方向")} · {withFallback(training.level, "待评估")}
+              {training.direction} · {training.level}
             </p>
-            <p className="mt-3 text-sm text-[var(--text-muted)]">本周目标：{weeklyGoal}</p>
+            <p className="mt-3 text-sm text-[var(--text-muted)]">本周目标：{training.weeklyGoal}</p>
             <div className="mt-4 grid gap-3">
               {training.tasks.slice(0, 3).map((task) => (
                 <div key={task.taskId} className="rounded-[18px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-medium text-[var(--text-primary)]">{task.title}</p>
-                    <Tag tone={getTrainingStatusTone(task)}>{getTrainingStatusLabel(task)}</Tag>
+                    <Tag tone={toneForTrainingStatus(task.status)}>
+                      {task.status}
+                    </Tag>
                   </div>
                   <p className="mt-2 text-xs text-[var(--text-muted)]">{task.focus}</p>
                 </div>
@@ -186,14 +172,13 @@ export default async function ProfilePage() {
           </Panel>
 
           <Panel className="p-6">
-            <p className="kicker">账号</p>
-            <h2 className="mt-1 text-xl font-semibold text-[var(--text-primary)]">账号信息</h2>
+            <p className="kicker">Account</p>
             <div className="mt-3 space-y-3 text-sm text-[var(--text-secondary)]">
-              <p>邮箱：{withFallback(profile.email, "未设置")}</p>
-              <p>学校：{withFallback(profile.schoolName, "未设置")}</p>
-              <p>专业：{withFallback(profile.majorName, "未设置")}</p>
+              <p>邮箱：{profile.email || "未设置"}</p>
+              <p>学校：{profile.schoolName || "未设置"}</p>
+              <p>专业：{profile.majorName || "未设置"}</p>
             </div>
-            <a href={appPublicPath("/settings")} className="mt-4 inline-flex">
+            <a href="/app/settings" className="mt-4 inline-flex">
               <Tag tone="accent">前往资料设置</Tag>
             </a>
           </Panel>

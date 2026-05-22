@@ -1,0 +1,35 @@
+[
+  {
+    "id": "hash-map-complement",
+    "title": "Hash Map Complement Pattern",
+    "snippet": "When a problem asks for two values adding to a target, scan once, look up the complement first, then insert the current value after the check.",
+    "source_name": "seed",
+    "source_url": "https://cp-algorithms.com/",
+    "license": "CC-BY-SA-4.0",
+    "topic": "hash_map",
+    "tags": ["array", "hash-map", "two-sum"],
+    "evidence_type": "algorithm_knowledge"
+  },
+  {
+    "id": "wrong-answer-boundary-check",
+    "title": "Wrong Answer Boundary Checklist",
+    "snippet": "For Wrong Answer, re-check duplicate values, zero-based indices, complement lookup order, and whether the current element is reused incorrectly.",
+    "source_name": "internal-seed",
+    "source_url": "internal://error-patterns/wrong-answer",
+    "license": "internal-seed",
+    "topic": "wrong_answer",
+    "tags": ["wrong-answer", "debugging", "java"],
+    "evidence_type": "error_pattern"
+  },
+  {
+    "id": "two-sum-problem-evidence",
+    "title": "Two Sum Problem Hint",
+    "snippet": "This pattern usually needs O(n) lookup with a value-to-index map; brute-force nested loops are correct but slower and easier to get duplicate handling wrong.",
+    "source_name": "internal-seed",
+    "source_url": "internal://problem-hints/two-sum",
+    "license": "internal-seed",
+    "topic": "two_sum",
+    "tags": ["problem-hint", "array", "hash-map"],
+    "evidence_type": "problem_evidence"
+  }
+]

@@ -3,7 +3,7 @@ import type {
   AdminMetric,
   AdminQuestionRow,
   AdminUserRow,
-  ExamDetail,
+  AiMessage,
   ExamSummary,
   PublicMessage,
   QuestionDetail,
@@ -12,10 +12,11 @@ import type {
   TrainingSnapshot,
   UserProfile
 } from "./contracts";
+import { aiMessages } from "./mock/ai";
 import { adminExams, adminMetrics, adminQuestions, adminUsers } from "./mock/admin";
 import { hotQuestions, questionDetails, questions } from "./mock/problems";
 import { exams } from "./mock/training";
-import { fetchLiveExamDetail, fetchLiveExamList, getExamMockFallback } from "./live/exams";
+import { fetchExamFirstQuestion, fetchLiveExamList, getExamMockFallback } from "./live/exams";
 import { fetchLiveMessages, getMessageMockFallback } from "./live/messages";
 import { fetchLiveHotProblemList, fetchLiveProblemDetail, fetchLiveProblemList } from "./live/questions";
 import { fetchLiveSubmissionHistory, getSubmissionMockFallback } from "./live/submissions";
@@ -44,12 +45,8 @@ export async function getHotProblemList(): Promise<QuestionListItem[]> {
 }
 
 export async function getProblemDetail(questionId: string, token?: string | null): Promise<QuestionDetail> {
-  if (token) {
-    return fetchLiveProblemDetail(questionId, token);
-  }
-
   try {
-    return await fetchLiveProblemDetail(questionId);
+    return await fetchLiveProblemDetail(questionId, token);
   } catch {
     return questionDetails[questionId] ?? questionDetails["two-sum"];
   }
@@ -73,17 +70,25 @@ export async function getExamList(): Promise<ExamSummary[]> {
   }
 }
 
-export async function getExamDetail(examId: string, token?: string | null): Promise<ExamDetail> {
-  if (token) {
-    return fetchLiveExamDetail(examId, token);
-  }
+export async function getExamDetail(examId: string): Promise<ExamSummary> {
+  const live = await getExamList();
+  return live.find((item) => item.examId === examId) ?? getExamMockFallback(examId);
+}
 
-  return getExamMockFallback(examId);
+export async function getExamFirstQuestion(examId: string, token?: string | null): Promise<string> {
+  if (!token) {
+    throw new Error("Missing access token for exam question lookup");
+  }
+  return fetchExamFirstQuestion(examId, token);
 }
 
 export async function getUserProfile(token?: string | null): Promise<UserProfile> {
   if (!token) return getUserMockFallback();
   return fetchLiveUserProfile(token);
+}
+
+export async function getAiMessages(): Promise<AiMessage[]> {
+  return aiMessages;
 }
 
 export async function getPublicMessages(token?: string | null): Promise<PublicMessage[]> {

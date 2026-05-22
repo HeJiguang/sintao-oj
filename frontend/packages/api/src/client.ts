@@ -69,5 +69,13 @@ export async function requestJson<T>(path: string, options: RequestOptions = {})
   if (!response.ok) {
     throw new ApiError(text || response.statusText, response.status);
   }
-  return JSON.parse(text) as T;
+  if (!text.trim()) {
+    throw new ApiError(`Empty response from ${path}`, 502);
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new ApiError(text || `Invalid JSON response from ${path}`, 502);
+  }
 }

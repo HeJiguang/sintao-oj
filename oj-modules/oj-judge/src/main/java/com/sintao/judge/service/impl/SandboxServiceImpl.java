@@ -36,11 +36,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
 public class SandboxServiceImpl implements ISandboxService {
+
+    private static final String[] KEEPALIVE_CMD = {"sh", "-c", "while true; do sleep 3600; done"};
 
     @Value("${sandbox.docker.host:tcp://localhost:2375}")
     private String dockerHost;
@@ -63,6 +66,8 @@ public class SandboxServiceImpl implements ISandboxService {
     private DockerClient dockerClient;
 
     private String containerId;
+
+    private String containerName;
 
     private String userCodeDir;
 
@@ -108,9 +113,11 @@ public class SandboxServiceImpl implements ISandboxService {
                 .build();
         pullJavaEnvImage();
         HostConfig hostConfig = getHostConfig();
+        containerName = JudgeConstants.JAVA_CONTAINER_NAME + "-" + UUID.randomUUID().toString().replace("-", "");
         CreateContainerCmd containerCmd = dockerClient
                 .createContainerCmd(sandboxImage)
-                .withName(JudgeConstants.JAVA_CONTAINER_NAME);
+                .withName(containerName)
+                .withCmd(KEEPALIVE_CMD);
         CreateContainerResponse response = containerCmd
                 .withHostConfig(hostConfig)
                 .withAttachStderr(true)
@@ -240,7 +247,7 @@ public class SandboxServiceImpl implements ISandboxService {
             log.warn("Failed to stop sandbox container {}", containerId, e);
         }
         try {
-            dockerClient.removeContainerCmd(containerId).exec();
+            dockerClient.removeContainerCmd(containerId).withForce(true).exec();
         } catch (Exception e) {
             log.warn("Failed to remove sandbox container {}", containerId, e);
         }
@@ -251,6 +258,7 @@ public class SandboxServiceImpl implements ISandboxService {
         } finally {
             dockerClient = null;
             containerId = null;
+            containerName = null;
         }
     }
 

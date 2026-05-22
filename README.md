@@ -4,6 +4,8 @@
 
 当前公开版本以后端能力为主，重点放在异步判题链路、结果推送机制、训练/AI 能力探索和本地微服务协作。前端整体体验和正式线上部署仍在持续建设中，因此本仓库暂不以“完整网站成品”作为展示重点。
 
+📖 详细技术架构文档请见 [`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md)，涵盖数据库设计、微服务职责、中间件拓扑、关键数据流和部署架构。
+
 ## 项目简介
 
 `SynCode` 以 Java 微服务为主体，围绕编程题目管理、用户练习/提交、异步判题、结果通知和训练规划等能力展开。
@@ -13,7 +15,7 @@
 - 基于 Spring Boot / Spring Cloud Alibaba 的多模块后端拆分
 - 基于 RabbitMQ 的异步判题主链路
 - 基于 WebSocket + Redis Pub/Sub 的判题结果推送
-- 基于 Python `oj-agent` 的 AI/训练规划能力探索
+- 基于 Python `oj-agent` 的 Workspace AI、训练规划与检索增强能力
 
 ## 核心模块
 
@@ -50,13 +52,16 @@
 - Python 3.11+
 - FastAPI
 - LangGraph
+- Qdrant
 
 ## 当前进度
 
 - 已形成多模块后端工程结构，核心业务拆分基本清晰
 - 已具备异步判题链路和请求级 `requestId` 跟踪能力
 - 已接入判题结果 WebSocket 推送机制
-- 已纳入 Python `oj-agent` 服务用于 AI 能力探索
+- 已纳入 Python `oj-agent` 服务用于 Workspace AI 主链路
+- 已具备 `frontend -> Next /app/api/ai/* -> oj-gateway /ai/** -> oj-agent /api/**` 的 AI 运行链路
+- 已开始在 `oj-agent` 中接入基于 Qdrant 的外部证据检索，用于补充算法知识、错误模式和题级提示
 - 当前公开仓库以后端、本地运行和架构演进为主
 - 前端整体仍在建设中，暂不作为当前仓库首页展示重点
 - 暂无正式公网演示地址
@@ -96,6 +101,15 @@ mvn -pl oj-gateway -am spring-boot:run
 cd oj-agent
 pip install -e .[dev]
 uvicorn app.main:app --host 0.0.0.0 --port 8015
+```
+
+### Qdrant（Workspace AI 外部证据层）
+
+`oj-agent` 当前主线会把外部算法知识和错误模式作为 evidence 返回给 Workspace AI。第一阶段使用 Qdrant 作为向量库，并支持用种子数据快速初始化。
+
+```bash
+cd oj-agent
+python scripts/seed_qdrant.py
 ```
 
 具体端口、Nacos 配置和本地环境参数请以各模块的 `bootstrap.yml`、`application-local.yml` 及相关本地配置文件为准。

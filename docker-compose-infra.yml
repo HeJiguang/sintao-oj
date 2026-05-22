@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  oj-mysql-server:
+    image: mysql:5.7
+    container_name: oj-mysql-server
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: change-me-local
+      MYSQL_DATABASE: bitoj_dev
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./deploy/dev/mysql/mysqldata:/var/lib/mysql
+      - ./deploy/dev/sql/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    command:
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-u", "root", "-pchange-me-local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  oj-redis-server:
+    container_name: oj-redis-server
+    image: redis:latest
+    ports:
+      - "16379:6379"
+    volumes:
+      - ./deploy/dev/redis/data:/data
+    environment:
+      REQUIREPASS: change-me-local
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "change-me-local", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  oj-rabbitmq-server:
+    container_name: oj-rabbitmq-server
+    image: rabbitmq:3.8.30-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./deploy/dev/rabbit/data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: change-me-local
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+  oj-elasticsearch-server:
+    container_name: oj-elasticsearch-server
+    image: elasticsearch:8.5.3
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./deploy/dev/elasticSearch/es-plugins:/usr/share/elasticsearch/plugins
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms256m -Xmx256m"
+      xpack.security.enabled: false
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:9200/_cluster/health?wait_for_status=green&timeout=1s"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+
+  # 可选：Nacos服务发现和配置中心（根据local-env.example.ps1默认禁用）
+  # oj-nacos-server:
+  #   image: nacos/nacos-server:v2.2.2
+  #   container_name: oj-nacos-server
+  #   environment:
+  #     - MODE=standalone
+  #     - JVM_XMS=256m
+  #     - JVM_XMX=256m
+  #     - SPRING_DATASOURCE_PLATFORM=mysql
+  #     - MYSQL_SERVICE_HOST=oj-mysql-server
+  #     - MYSQL_SERVICE_PORT=3306
+  #     - MYSQL_SERVICE_DB_NAME=bitoj_nacos_local
+  #     - MYSQL_SERVICE_USER=ojtest
+  #     - MYSQL_SERVICE_PASSWORD=change-me-local
+  #   volumes:
+  #     - ./deploy/dev/nacos/conf/application.properties:/home/nacos/conf/application.properties
+  #   ports:
+  #     - "8848:8848"
+  #     - "9848:9848"
+  #   depends_on:
+  #     oj-mysql-server:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: [ "CMD", "curl", "-f", "http://localhost:8848/nacos" ]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 10
+
+  # 可选：XXL-Job任务调度中心
+  # oj-xxl-job-server:
+  #   container_name: oj-xxl-job-server
+  #   image: xuxueli/xxl-job-admin:2.4.0
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:mysql://oj-mysql-server:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
+  #     - SPRING_DATASOURCE_USERNAME=ojtest
+  #     - SPRING_DATASOURCE_PASSWORD=change-me-local
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     oj-mysql-server:
+  #       condition: service_healthy
+
+volumes:
+  mysql-data:
+  redis-data:
+  rabbitmq-data:
+  elasticsearch-data:

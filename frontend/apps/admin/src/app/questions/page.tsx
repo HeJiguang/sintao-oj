@@ -13,20 +13,20 @@ export default async function AdminQuestionsPage() {
     <AdminShell
       adminName={admin.nickName}
       title="题目管理"
-      description="题目管理以真实增删改为核心，页面直接围绕题面、样例、默认代码和判题约束展开。"
+      description="题目维护以真实增删改为核心，页面直接围绕题面、样例、默认代码和判题约束展开。"
     >
       <Panel className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-5 py-4">
           <h3 className="text-xl font-semibold">题目列表</h3>
-          <a href="/admin/questions/new">
-            <Button>新增题目</Button>
+          <a href="/questions/new">
+            <Button>新建题目</Button>
           </a>
         </div>
         <div className="divide-y divide-[var(--border-soft)]">
           {questions.map((item) => (
             <a
               key={item.questionId}
-              href={`/admin/questions/${item.questionId}`}
+              href={`/questions/${item.questionId}`}
               className="grid gap-3 px-5 py-4 transition hover:bg-[var(--surface-2)] md:grid-cols-[120px_minmax(0,1fr)_140px_180px] md:items-center"
             >
               <span className="text-sm text-[var(--text-muted)]">{item.questionId}</span>

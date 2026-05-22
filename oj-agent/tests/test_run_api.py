@@ -1,395 +1,302 @@
-from pathlib import Path
-import sys
+import json
+import threading
+import time
 
 from fastapi.testclient import TestClient
 
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-
-from app.application.run_service import run_service  # noqa: E402
-from app.domain.inbox import InboxItemType  # noqa: E402
-from app.domain.runs import RunSource, RunType  # noqa: E402
-from app.domain.write_intents import (  # noqa: E402
-    TargetService,
-    UserImpactLevel,
-    WriteIntent as StoredWriteIntent,
-    WriteIntentType,
-)
-from app.main import app  # noqa: E402
-from app.runtime.enums import RiskLevel, RunStatus, TaskType  # noqa: E402
-from app.runtime.models import (  # noqa: E402
-    EvidenceState,
-    ExecutionState,
-    GuardrailState,
-    OutcomeState,
-    RequestContext,
-    UnifiedAgentState,
-    WriteIntent,
-)
+from app.main import app
+from app.runtime.contracts import ContextEnvelope, FinalAnswer, PlannerAction
+from app.runtime.data_sources import RequestBoundDataSources
+from app.runtime.graph import build_runtime_graph
+from app.runtime.tools import build_default_tool_registry
+from app.services.run_service import run_service
 
 
 client = TestClient(app)
 
 
-def setup_function():
-    run_service.clear()
+def wait_until(predicate, timeout: float = 3.0, interval: float = 0.05):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        value = predicate()
+        if value:
+            return value
+        time.sleep(interval)
+    return predicate()
 
 
-def _fake_chat_state(trace_id: str, user_id: str, message: str, question_title: str | None, judge_result: str | None):
-    return UnifiedAgentState(
-        request=RequestContext(
-            trace_id=trace_id,
-            user_id=user_id,
-            task_type=TaskType.CHAT,
-            user_message=message,
-            question_title=question_title,
-            judge_result=judge_result,
-        ),
-        execution=ExecutionState(
-            run_id=trace_id,
-            graph_name="llm_runtime",
-            status=RunStatus.SUCCEEDED,
-            active_node="response_packaging",
-            model_name="deepseek-chat",
-        ),
-        evidence=EvidenceState(route_names=["llm_only"]),
-        guardrail=GuardrailState(
-            risk_level=RiskLevel.LOW,
-            completeness_ok=True,
-            policy_ok=True,
-        ),
-        outcome=OutcomeState(
-            intent="explain_problem",
-            answer="先用哈希表记录已经出现过的数字。",
-            confidence=0.92,
-            next_action="先手推样例 [2,7,11,15]。",
-            status_events=[
-                {"node": "llm_prepare", "message": "已整理大模型输入上下文。"},
-                {"node": "llm_inference", "message": "已完成推理。"},
-                {"node": "response_packaging", "message": "已整理模型输出结果。"},
-            ],
-        ),
-    )
+client = TestClient(app)
 
 
-def test_create_run_returns_camel_case_run_metadata_and_bootstrap_artifact(monkeypatch):
-    import app.api.runs as runs_module  # noqa: WPS433
+class BlockingStreamLLM:
+    def __init__(self) -> None:
+        self.first_chunk_ready = threading.Event()
+        self.release_stream = threading.Event()
 
-    monkeypatch.setattr(
-        runs_module,
-        "execute_run_request",
-        lambda request, user_id, trace_id, headers: _fake_chat_state(
-            trace_id,
-            user_id,
-            request.context.user_message or "",
-            request.context.question_title,
-            request.context.judge_result,
-        ),
-        raising=False,
-    )
+    def invoke_structured(self, *, schema, system_prompt: str, user_prompt: str) -> dict:
+        del system_prompt
+        payload = json.loads(user_prompt.splitlines()[-1])
+        managed_context = payload["managed_context"]
+        request_context = managed_context["request_context"]
+        schema_name = getattr(schema, "__name__", "")
 
+        if schema is ContextEnvelope:
+            return {
+                "user_goal": "diagnose current failure",
+                "inferred_subtask": managed_context["run_type"],
+                "wants_full_solution": False,
+                "wants_partial_code": True,
+                "confidence": 0.91,
+                "salient_context": [request_context["question_title"]],
+                "missing_context": [],
+            }
+
+        if schema is PlannerAction:
+            observed_tools = {item["tool_name"] for item in payload.get("observations", [])}
+            if "get_question_context" not in observed_tools:
+                return {"type": "tool", "tool": "get_question_context", "input": {}, "reason": "Need the problem statement"}
+            if "get_workspace_snapshot" not in observed_tools:
+                return {"type": "tool", "tool": "get_workspace_snapshot", "input": {}, "reason": "Need the current code"}
+            if "get_judge_snapshot" not in observed_tools:
+                return {"type": "tool", "tool": "get_judge_snapshot", "input": {}, "reason": "Need the latest judge result"}
+            return {"type": "final", "reason": "Enough evidence to start the answer stream"}
+
+        if schema is FinalAnswer:
+            return {
+                "title": "Streaming diagnosis",
+                "summary": "Fallback final answer for non-streaming implementations.",
+                "answer": "Fallback full answer.",
+                "next_action": "Trace the duplicate-value sample manually.",
+                "evidence_refs": ["question_context", "workspace_snapshot", "judge_snapshot"],
+                "confidence": 0.87,
+                "intent": "analyze_failure",
+            }
+
+        if schema_name == "FinalAnswerMeta":
+            return {
+                "title": "Streaming diagnosis",
+                "summary": "The streamed answer pinpoints the hash-map update order bug.",
+                "next_action": "Trace the [3,3] sample before changing insertion order.",
+                "evidence_refs": ["question_context", "workspace_snapshot", "judge_snapshot"],
+                "confidence": 0.87,
+                "intent": "analyze_failure",
+            }
+
+        raise AssertionError(f"Unhandled schema in BlockingStreamLLM: {schema}")
+
+    def stream_text(self, *, system_prompt: str, user_prompt: str):
+        del system_prompt, user_prompt
+        self.first_chunk_ready.set()
+        yield "First streamed chunk."
+        self.release_stream.wait(timeout=2.0)
+        yield " Second streamed chunk."
+
+
+class EmptyKnowledgeRetriever:
+    def search(self, *, request_context: dict, query: str | None, question_title: str | None, top_k: int = 3) -> list[dict]:
+        del request_context, query, question_title, top_k
+        return []
+
+
+def test_app_boots():
+    response = client.get("/healthz")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_debug_playground_page_contains_sse_hooks():
+    response = client.get("/debug/agent")
+
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "EventSource" in response.text
+    assert "/api/runs/" in response.text
+    assert "/debug/runs/" in response.text
+
+
+def test_create_run_returns_required_metadata():
     response = client.post(
         "/api/runs",
         json={
             "runType": "interactive_tutor",
             "source": "workspace_panel",
-            "userId": "u-1",
-            "conversationId": "conv-1",
             "context": {
                 "questionId": "1001",
                 "questionTitle": "Two Sum",
+                "questionContent": "Given an array of integers nums and an integer target...",
+                "userCode": "class Solution {}",
                 "judgeResult": "WA on sample #2",
-                "userMessage": "Why is this still wrong?",
+                "userMessage": "Give me a hint.",
             },
         },
     )
 
     assert response.status_code == 200
+
     payload = response.json()
     assert payload["runId"]
-    assert payload["status"] == "SUCCEEDED"
-    assert payload["statusLabel"] == "已完成"
-    assert payload["entryGraph"] == "llm_runtime"
-    assert payload["entryGraphLabel"] == "大模型运行时"
+    assert payload["status"] == "ACCEPTED"
+    assert payload["entryGraph"] == "oj_tutor_supervisor"
+    assert payload["eventsUrl"].endswith("/events")
+    assert payload["artifactsUrl"].endswith("/artifacts")
     assert payload["bootstrapArtifactId"]
 
-    run_snapshot = client.get(f"/api/runs/{payload['runId']}")
-    assert run_snapshot.status_code == 200
-    assert run_snapshot.json()["runId"] == payload["runId"]
-    assert "contextRef" in run_snapshot.json()
 
-    artifacts = client.get(f"/api/runs/{payload['runId']}/artifacts")
-    assert artifacts.status_code == 200
-    assert artifacts.json()[0]["artifactId"]
-    assert artifacts.json()[0]["title"] == "智能体任务已创建"
-    assert artifacts.json()[0]["artifactTypeLabel"] == "结果卡片"
-    assert artifacts.json()[0]["renderHintLabel"] == "时间线卡片"
-
-
-def test_run_events_endpoint_streams_camel_case_events(monkeypatch):
-    import app.api.runs as runs_module  # noqa: WPS433
-
-    monkeypatch.setattr(
-        runs_module,
-        "execute_run_request",
-        lambda request, user_id, trace_id, headers: _fake_chat_state(
-            trace_id,
-            user_id,
-            request.context.user_message or "",
-            request.context.question_title,
-            request.context.judge_result,
-        ),
-        raising=False,
-    )
-
-    response = client.post(
+def test_events_endpoint_streams_sse_blocks():
+    create_response = client.post(
         "/api/runs",
         json={
             "runType": "interactive_diagnosis",
             "source": "workspace_panel",
-            "userId": "u-2",
             "context": {
+                "questionId": "1001",
                 "questionTitle": "Two Sum",
+                "questionContent": "Given an array of integers nums and an integer target...",
+                "userCode": "class Solution {}",
                 "judgeResult": "WA on sample #2",
-                "userMessage": "Help me diagnose this.",
+                "userMessage": "Why is this still wrong?",
             },
         },
     )
-    run_id = response.json()["runId"]
+    run_id = create_response.json()["runId"]
 
     event_response = client.get(f"/api/runs/{run_id}/events")
 
     assert event_response.status_code == 200
     assert "event: run_event" in event_response.text
-    assert '"eventType": "run.accepted"' in event_response.text
-    assert '"eventType": "artifact.created"' in event_response.text
+    assert '"eventType":"run.accepted"' in event_response.text
+    assert '"eventType":"message.delta"' in event_response.text
+    assert '"eventType":"run.completed"' in event_response.text
 
 
-def test_create_run_projects_runtime_answer_and_registers_write_intents(monkeypatch):
-    import app.api.runs as runs_module  # noqa: WPS433
-
-    monkeypatch.setattr(
-        runs_module,
-        "execute_run_request",
-        lambda request, user_id, trace_id, headers: UnifiedAgentState(
-            request=RequestContext(
-                trace_id=trace_id,
-                user_id=user_id,
-                task_type=TaskType.DIAGNOSIS,
-                user_message=request.context.user_message or "",
-                question_title=request.context.question_title,
-                judge_result=request.context.judge_result,
-            ),
-            execution=ExecutionState(
-                run_id="runtime-run",
-                graph_name="llm_runtime",
-                status=RunStatus.SUCCEEDED,
-                active_node="response_packaging",
-            ),
-            evidence=EvidenceState(route_names=["llm_only"]),
-            guardrail=GuardrailState(
-                risk_level=RiskLevel.LOW,
-                completeness_ok=True,
-                policy_ok=True,
-            ),
-            outcome=OutcomeState(
-                intent="analyze_failure",
-                answer="诊断结论：重复值场景下，哈希表更新时机过早。",
-                confidence=0.92,
-                next_action="先手推 [3,3] 这个样例，再决定什么时候写入当前下标。",
-                status_events=[
-                    {"node": "llm_prepare", "message": "已整理大模型输入上下文。"},
-                    {"node": "llm_inference", "message": "已完成推理。"},
-                    {"node": "response_packaging", "message": "已整理模型输出结果。"},
-                ],
-                write_intents=[
-                    WriteIntent(
-                        intent_type="profile_update_write",
-                        target_service="oj-friend",
-                        payload={"focus_tags": ["array"]},
-                    )
-                ],
-            ),
-        ),
-        raising=False,
+def test_run_emits_live_progress_and_message_delta_before_completion():
+    llm = BlockingStreamLLM()
+    tool_registry = build_default_tool_registry(
+        RequestBoundDataSources(
+            knowledge_retriever=EmptyKnowledgeRetriever(),
+        )
     )
+    run_service.tool_registry = tool_registry
+    run_service.runtime_graph = build_runtime_graph(llm=llm, tool_registry=tool_registry)
+    run_service.clear()
 
-    response = client.post(
+    create_response = client.post(
         "/api/runs",
         json={
             "runType": "interactive_diagnosis",
             "source": "workspace_panel",
-            "userId": "u-4",
             "context": {
+                "questionId": "1001",
                 "questionTitle": "Two Sum",
+                "questionContent": "Given an array of integers nums and an integer target...",
+                "userCode": "class Solution {}",
                 "judgeResult": "WA on sample #2",
                 "userMessage": "Why is this still wrong?",
             },
         },
     )
+    run_id = create_response.json()["runId"]
 
-    assert response.status_code == 200
-    payload = response.json()
+    assert llm.first_chunk_ready.wait(timeout=1.0), "responder never entered streaming mode"
 
-    artifacts = client.get(f"/api/runs/{payload['runId']}/artifacts")
-    assert artifacts.status_code == 200
-    rows = artifacts.json()
-    assert len(rows) == 2
-    assert rows[0]["title"] == "诊断任务已创建"
-    assert rows[1]["artifactType"] == "diagnosis_report"
-    assert rows[1]["artifactTypeLabel"] == "诊断报告"
-    assert rows[1]["body"]["answer"].startswith("诊断结论：")
-    assert rows[1]["body"]["nextAction"] == "先手推 [3,3] 这个样例，再决定什么时候写入当前下标。"
-    assert rows[1]["body"]["intentLabel"] == "诊断分析"
+    events = run_service.list_events(run_id)
+    event_types = [event.event_type for event in events]
 
-    event_response = client.get(f"/api/runs/{payload['runId']}/events")
-    assert event_response.status_code == 200
-    assert '"eventType": "graph.node_completed"' in event_response.text
-    assert '"eventTypeLabel": "节点已完成"' in event_response.text
-    assert '"nodeLabel": "上下文整理"' in event_response.text
-    assert '"graphName": "llm_runtime"' in event_response.text
+    assert run_service.get_run(run_id).status == "RUNNING"
+    assert "graph.node_completed" in event_types
+    assert "tool.completed" in event_types
+    assert "message.delta" in event_types
+    assert "artifact.created" not in event_types
+    assert "run.completed" not in event_types
 
-    write_intents = run_service.list_write_intents(payload["runId"])
-    decisions = run_service.list_policy_decisions(payload["runId"])
-    assert len(write_intents) == 1
-    assert write_intents[0].intent_type.value == "profile_update"
-    assert decisions[0].decision.value == "AUTO_APPLY"
-
-
-def test_interactive_plan_run_reaches_llm_runtime_and_registers_write_intent(monkeypatch):
-    import app.api.runs as runs_module  # noqa: WPS433
-
-    monkeypatch.setattr(
-        runs_module,
-        "execute_run_request",
-        lambda request, user_id, trace_id, headers: UnifiedAgentState(
-            request=RequestContext(
-                trace_id=trace_id,
-                user_id=user_id,
-                task_type=TaskType.TRAINING_PLAN,
-                user_message=request.context.user_message or "",
-                question_title=request.context.question_title,
-                judge_result=request.context.judge_result,
-            ),
-            execution=ExecutionState(
-                run_id="runtime-run",
-                graph_name="llm_runtime",
-                status=RunStatus.SUCCEEDED,
-                active_node="training_plan_llm",
-            ),
-            evidence=EvidenceState(route_names=["llm_only"]),
-            guardrail=GuardrailState(
-                risk_level=RiskLevel.LOW,
-                completeness_ok=True,
-                policy_ok=True,
-            ),
-            outcome=OutcomeState(
-                intent="training_plan",
-                answer="先练数组和哈希。",
-                next_action="先完成第一题。",
-                confidence=0.95,
-                response_payload={
-                    "current_level": "starter",
-                    "target_direction": "algorithm_foundation",
-                    "weak_points": "hash table",
-                    "strong_points": "array basics",
-                    "plan_title": "四天入门计划",
-                    "plan_goal": "稳定哈希与数组基础。",
-                    "ai_summary": "从基础题开始推进。",
-                    "tasks": [
-                        {
-                            "task_type": "question",
-                            "question_id": 1001,
-                            "exam_id": None,
-                            "title_snapshot": "Two Sum",
-                            "task_order": 1,
-                            "recommended_reason": "先补齐哈希表基本功。",
-                            "knowledge_tags_snapshot": "hash table",
-                            "due_time": None,
-                        }
-                    ],
-                },
-                status_events=[
-                    {"node": "llm_prepare", "message": "已整理训练计划生成所需上下文。"},
-                    {"node": "llm_inference", "message": "已完成训练计划推理。"},
-                    {"node": "training_plan_llm", "message": "已校验并封装训练计划结果。"},
-                ],
-                write_intents=[
-                    WriteIntent(
-                        intent_type="training_plan_write",
-                        target_service="oj-friend",
-                        payload={"plan_title": "四天入门计划"},
-                    )
-                ],
-            ),
-        ),
-        raising=False,
+    llm.release_stream.set()
+    final_event_types = wait_until(
+        lambda: [event.event_type for event in run_service.list_events(run_id)]
+        if any(event.event_type == "run.completed" for event in run_service.list_events(run_id))
+        else None,
+        timeout=3.0,
     )
 
-    response = client.post(
+    assert final_event_types.index("message.delta") < final_event_types.index("artifact.created")
+    assert final_event_types.index("artifact.created") < final_event_types.index("run.completed")
+
+
+def test_artifacts_endpoint_returns_final_answer_card():
+    create_response = client.post(
         "/api/runs",
         json={
-            "runType": "interactive_plan",
+            "runType": "interactive_recommendation",
             "source": "workspace_panel",
-            "userId": "u-plan",
             "context": {
                 "questionId": "1001",
                 "questionTitle": "Two Sum",
-                "judgeResult": "WA on sample #2",
-                "userMessage": "Build a learning plan for me.",
+                "questionContent": "Given an array of integers nums and an integer target...",
+                "userCode": "class Solution {}",
+                "judgeResult": "Accepted",
+                "userMessage": "What should I practice next?",
             },
         },
     )
+    run_id = create_response.json()["runId"]
 
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["status"] == "SUCCEEDED"
-
-    artifacts = client.get(f"/api/runs/{payload['runId']}/artifacts")
-    assert artifacts.status_code == 200
-    rows = artifacts.json()
-    assert any(row["artifactType"] == "training_plan" for row in rows)
-
-    write_intents = run_service.list_write_intents(payload["runId"])
-    decisions = run_service.list_policy_decisions(payload["runId"])
-    assert write_intents
-    assert write_intents[0].intent_type.value == "training_plan_recompute"
-    assert decisions[0].decision.value == "AUTO_APPLY"
+    payload = wait_until(lambda: client.get(f"/api/runs/{run_id}/artifacts").json(), timeout=3.0)
+    assert len(payload) >= 2
+    assert payload[0]["artifactId"]
+    assert payload[-1]["artifactType"] == "answer_card"
+    assert payload[-1]["body"]["intent"]
+    assert payload[-1]["body"]["answer"]
+    assert payload[-1]["body"]["nextAction"]
 
 
-def test_draft_approval_flow_surfaces_through_inbox_and_draft_routes():
-    run = run_service.create_run(
-        run_type=RunType.PLAN_RECOMPUTE,
-        source=RunSource.SCHEDULER,
-        user_id="u-3",
+def test_create_run_executes_graph_and_projects_diagnosis_evidence():
+    create_response = client.post(
+        "/api/runs",
+        json={
+            "runType": "interactive_diagnosis",
+            "source": "workspace_panel",
+            "context": {
+                "questionId": "1001",
+                "questionTitle": "Two Sum",
+                "questionContent": "Given an array of integers nums and an integer target...",
+                "userCode": "class Solution {}",
+                "judgeResult": "WA on sample #2",
+                "userMessage": "Help me diagnose the issue.",
+            },
+        },
     )
-    write_intent, _decision = run_service.register_write_intent(
-        StoredWriteIntent(
-            run_id=run.run_id,
-            user_id="u-3",
-            intent_type=WriteIntentType.TRAINING_PLAN_REPLACE,
-            target_service=TargetService.OJ_FRIEND,
-            target_aggregate="training_plan",
-            payload={"planTitle": "Replacement plan"},
-            user_impact_level=UserImpactLevel.HIGH,
-        )
+    run_id = create_response.json()["runId"]
+
+    payload = wait_until(lambda: client.get(f"/api/runs/{run_id}/artifacts").json(), timeout=3.0)
+    evidence = payload[-1]["body"]["evidence"]
+    source_ids = {item["sourceId"] for item in evidence}
+
+    assert "question_context" in source_ids
+    assert "workspace_snapshot" in source_ids
+    assert "judge_snapshot" in source_ids
+    assert "knowledge_hash_map" in source_ids
+
+
+def test_debug_runtime_state_endpoint_returns_final_state_snapshot():
+    create_response = client.post(
+        "/api/runs",
+        json={
+            "runType": "interactive_diagnosis",
+            "source": "workspace_panel",
+            "context": {
+                "questionId": "1001",
+                "questionTitle": "Two Sum",
+                "questionContent": "Given an array of integers nums and an integer target...",
+                "userCode": "class Solution {}",
+                "judgeResult": "WA on sample #2",
+                "userMessage": "Help me diagnose the issue.",
+            },
+        },
     )
+    run_id = create_response.json()["runId"]
 
-    drafts = run_service.list_drafts("u-3")
-    assert drafts
-
-    inbox_response = client.get("/api/inbox", params={"user_id": "u-3"})
-    assert inbox_response.status_code == 200
-    assert inbox_response.json()[0]["itemType"] == InboxItemType.DRAFT_REVIEW.value
-
-    approve_response = client.post(
-        f"/api/drafts/{drafts[0].draft_id}/approve",
-        json={"userId": "u-3"},
-    )
-
-    assert approve_response.status_code == 200
-    assert approve_response.json()["status"] == "APPROVED"
-    assert run_service.list_policy_decisions(run.run_id)[0].write_intent_id == write_intent.write_intent_id
+    payload = wait_until(lambda: client.get(f"/debug/runs/{run_id}/state").json(), timeout=3.0)
+    assert payload["run_id"] == run_id
+    assert payload["planner_round"] >= 1
+    assert payload["planner_trace"]
+    assert payload["final_answer_draft"]["intent"] == "analyze_failure"

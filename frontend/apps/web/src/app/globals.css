@@ -4,154 +4,43 @@
 @source "../../../../packages/config/src";
 @source "../";
 
+/* ── 噪点纹理 ── */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.028), transparent 22%),
-    radial-gradient(circle at 78% 12%, rgba(34, 197, 94, 0.055), transparent 20%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent 22%);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 1;
 }
 
-:root.light body::before {
-  background:
-    radial-gradient(circle at top left, rgba(17, 24, 39, 0.035), transparent 18%),
-    radial-gradient(circle at 78% 12%, rgba(21, 128, 61, 0.08), transparent 20%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.26), transparent 24%);
-}
-
+:root.light body::before,
 @media (prefers-color-scheme: light) {
   :root:not(.dark) body::before {
-    background:
-      radial-gradient(circle at top left, rgba(17, 24, 39, 0.035), transparent 18%),
-      radial-gradient(circle at 78% 12%, rgba(21, 128, 61, 0.08), transparent 20%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.26), transparent 24%);
+    opacity: 0.025;
   }
 }
 
-.syncode-home-canvas {
-  position: relative;
+/* Hero 代码块 */
+.hero-code-block {
+  background-color: #0b0b0c;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
   overflow: hidden;
 }
 
-.syncode-home-canvas::before {
-  content: "";
-  position: absolute;
-  inset: 7rem auto auto 54%;
-  width: 42rem;
-  height: 42rem;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(34, 197, 94, 0.1), transparent 64%);
-  filter: blur(24px);
-  pointer-events: none;
-  opacity: 0.72;
-  transform: translateX(-8%);
+/* 带有极精细模糊深度的毛玻璃导航栏 */
+.nav-bar {
+  background: rgba(10, 10, 10, 0.68);
+  border: 1px solid var(--border-soft);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
 }
 
-.syncode-home-canvas::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-  background-size: 36px 36px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 28%, transparent 72%, rgba(0, 0, 0, 0.14));
-  opacity: 0.3;
-}
-
-.syncode-home-masthead {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.008)),
-    var(--surface-overlay);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.16);
-}
-
-.syncode-home-hero {
-  align-items: stretch;
-  position: relative;
-}
-
-.syncode-home-brandline {
-  opacity: 0.86;
-}
-
-.syncode-home-metric-row {
-  position: relative;
-}
-
-.syncode-home-workbench {
-  box-shadow: var(--shadow-panel);
-  position: relative;
-  overflow: hidden;
-}
-
-.syncode-home-workbench::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.15), transparent 65%);
-}
-
-.syncode-home-workbench-wrap {
-  position: relative;
-}
-
-.syncode-home-workbench-glow {
-  position: absolute;
-  inset: 4% -2% auto auto;
-  width: 16rem;
-  height: 16rem;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(34, 197, 94, 0.12), transparent 68%);
-  filter: blur(22px);
-  pointer-events: none;
-}
-
-.syncode-home-workbench-head,
-.syncode-home-workbench-foot > div {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
-}
-
-.syncode-home-proof {
-  position: relative;
-}
-
-.syncode-home-metric {
-  position: relative;
-  padding-bottom: 0.25rem;
-}
-
-.syncode-home-metric::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: calc(100% + 0.45rem);
-  width: 36px;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(34, 197, 94, 0.65), rgba(34, 197, 94, 0));
-}
-
-.syncode-home-signal-grid,
-.syncode-home-proof-grid,
-.syncode-home-proof-card {
-  position: relative;
-}
-
-.syncode-home-signal-card,
-.syncode-home-proof-card {
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
-}
-
-.syncode-home-bottom-cta {
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+:root.light .nav-bar,
+@media (prefers-color-scheme: light) {
+  :root:not(.dark) .nav-bar {
+    background: rgba(250, 249, 246, 0.76); /* 匹配奶油色背景 */
+  }
 }

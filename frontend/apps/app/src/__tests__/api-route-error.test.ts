@@ -3,8 +3,9 @@ import assert from "node:assert/strict";
 import { ApiError } from "@aioj/api";
 
 import { resolveApiRouteError } from "../lib/api-route-error";
+import { readJsonBody } from "../lib/response-json";
 
-function main() {
+async function main() {
   const rateLimit = resolveApiRouteError(
     new ApiError("\u5f53\u5929\u8bf7\u6c42\u6b21\u6570\u5df2\u8fbe\u5230\u4e0a\u9650", 3107),
     "\u9a8c\u8bc1\u7801\u53d1\u9001\u5931\u8d25\u3002"
@@ -26,6 +27,21 @@ function main() {
   );
   assert.equal(upstreamFailure.status, 502);
   assert.equal(upstreamFailure.body.message, "connect ETIMEDOUT");
+
+  const parsed = await readJsonBody<{ message: string }>({
+    text: async () => '{"message":"judge failed"}'
+  });
+  assert.equal(parsed?.message, "judge failed");
+
+  const empty = await readJsonBody<{ message: string }>({
+    text: async () => ""
+  });
+  assert.equal(empty, null);
+
+  const invalid = await readJsonBody<{ message: string }>({
+    text: async () => "<!doctype html>"
+  });
+  assert.equal(invalid, null);
 }
 
-main();
+void main();

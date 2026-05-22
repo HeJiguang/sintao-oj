@@ -1,166 +1,120 @@
-/* Syncode visual system tokens */
+/* ─────────────────────────────────────────────────────────────
+   SynCode Design Tokens  —  Emotional & Elegant Dual-Theme System
+   Dark  = :root  (prefers-color-scheme: dark default)
+   Light = :root.light
+   ───────────────────────────────────────────────────────────── */
 
+/* ── Dark Mode (Default) ── */
 :root {
   color-scheme: dark;
 
-  /* Brand */
-  --brand-50: #ecfdf5;
-  --brand-100: #d1fae5;
-  --brand-200: #a7f3d0;
-  --brand-300: #6ee7b7;
-  --brand-400: #22c55e;
-  --brand-500: #16a34a;
-  --brand-600: #15803d;
-  --brand-700: #166534;
-  --brand-800: #14532d;
+  /* Backgrounds — 极深的主背景 & 略亮的卡片 */
+  --bg:            #0a0a0a;   /* 纯黑灰 */
+  --bg-elevated:   #111111;   /* 极暗的深灰 */
 
-  /* Canvas */
-  --bg: #111111;
-  --bg-elevated: #171717;
-  --surface-1: #1c1c1c;
-  --surface-2: #202020;
-  --surface-3: #2a2a2a;
-  --surface-muted: rgba(255, 255, 255, 0.028);
-  --surface-overlay: rgba(17, 17, 17, 0.92);
-  --panel-accent-bg: linear-gradient(180deg, rgba(34, 34, 34, 0.98), rgba(26, 26, 26, 0.98));
+  /* Surfaces */
+  --surface-1:     #111111;   /* 卡片底色 */
+  --surface-2:     #1a1a1a;   /* 悬浮/激活色块 */
+  --surface-muted: rgba(17, 17, 17, 0.6);
 
-  /* Borders */
-  --border-soft: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --border-focus: rgba(21, 128, 61, 0.42);
+  /* Borders — 完全靠 1px 半透明界定，绝不发光 */
+  --border-soft:   rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
 
   /* Typography */
-  --text-primary: #f3f3f3;
-  --text-secondary: #b7b7b7;
-  --text-muted: #8d8d8d;
-  --text-faint: #676767;
+  --text-primary:   #fafafa;
+  --text-secondary: #a1a1aa;  /* 中度灰，提升呼吸感 */
+  --text-muted:     #71717a;
 
-  /* Accent and semantic */
-  --accent: var(--brand-600);
-  --accent-strong: var(--brand-500);
-  --accent-bg: rgba(21, 128, 61, 0.16);
-  --accent-wash: rgba(21, 128, 61, 0.08);
-  --success: #16a34a;
-  --success-bg: rgba(22, 163, 74, 0.14);
-  --warning: #f1b56d;
-  --warning-bg: rgba(241, 181, 109, 0.14);
-  --danger: #ee8f8f;
-  --danger-bg: rgba(238, 143, 143, 0.14);
+  /* Primary CTA — 暗色：白底黑字，无渐变 */
+  --cta-bg:    #fafafa;
+  --cta-fg:    #0a0a0a;
+  --cta-hover: #e4e4e7;
 
-  /* Actions */
-  --cta-bg: linear-gradient(135deg, #15803d 0%, #166534 100%);
-  --cta-fg: #051109;
-  --cta-hover: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-  --cta-secondary-bg: rgba(255, 255, 255, 0.03);
-  --cta-secondary-hover: rgba(255, 255, 255, 0.06);
+  /* Semantic & Emotional Accents */
+  --accent:    #a78bfa;  /* 柔和的薰衣草紫 (Violet-400) */
+  --success:   #4ade80;  /* 柔和绿 */
+  --warning:   #fb923c;
+  --danger:    #f87171;  /* 柔和红 */
 
-  /* Shape */
-  --radius-xs: 8px;
-  --radius-sm: 10px;
+  --success-bg: rgba(74, 222, 128, 0.12);
+  --warning-bg: rgba(251, 146, 60, 0.14);
+  --danger-bg:  rgba(248, 113, 113, 0.14);
+  --accent-bg:  rgba(167, 139, 250, 0.12);
+
+  /* Radius — 极致网格 */
   --radius-card: 12px;
-  --radius-pill: 999px;
+  --radius-sm:   6px;
 
-  /* Shadow */
-  --shadow-panel: 0 10px 24px rgba(0, 0, 0, 0.18);
-  --shadow-float: 0 18px 40px rgba(0, 0, 0, 0.24);
+  /* Shadows — 暗色下所有常规面板【无投影】，只保留纯黑色的极端浮层弥散(如下拉菜单) */
+  --shadow-panel: none;
+  --shadow-float: 0 16px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
 
-  /* Layout */
-  --shell-max: 1560px;
-  --content-max: 1280px;
-
-  /* Typography stack */
+  /* Fonts — 引入 Geist */
   --font-sans:
     "Geist", "Inter", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono:
-    "Geist Mono", "JetBrains Mono", "SFMono-Regular", "Consolas", monospace;
+    "Geist Mono", "Monaco", "JetBrains Mono", ui-monospace, monospace;
 }
 
+/* ── Light Mode Base Variables ── */
 :root.light {
-  color-scheme: light;
-
-  --bg: #f6f8fc;
-  --bg-elevated: #ffffff;
-  --surface-1: rgba(255, 255, 255, 0.94);
-  --surface-2: rgba(255, 255, 255, 0.98);
-  --surface-3: #f4f7fb;
-  --surface-muted: rgba(255, 255, 255, 0.62);
-  --surface-overlay: rgba(255, 255, 255, 0.94);
-  --panel-accent-bg: linear-gradient(180deg, rgba(247, 250, 255, 0.96), rgba(235, 242, 252, 0.92));
-
-  --border-soft: rgba(16, 24, 40, 0.08);
-  --border-strong: rgba(16, 24, 40, 0.14);
-  --border-focus: rgba(32, 192, 138, 0.36);
-
-  --text-primary: #111827;
-  --text-secondary: #334155;
-  --text-muted: #667085;
-  --text-faint: #94a3b8;
-
-  --accent: var(--brand-600);
-  --accent-strong: var(--brand-700);
-  --accent-bg: rgba(26, 151, 108, 0.1);
-  --accent-wash: rgba(83, 111, 255, 0.08);
-  --success: #18804a;
-  --success-bg: rgba(24, 128, 74, 0.1);
-  --warning: #b56a11;
-  --warning-bg: rgba(181, 106, 17, 0.1);
-  --danger: #b54747;
-  --danger-bg: rgba(181, 71, 71, 0.1);
-
-  --cta-bg: linear-gradient(135deg, #23d69a 0%, #16b67e 100%);
-  --cta-fg: #05120d;
-  --cta-hover: linear-gradient(135deg, #2ce0a5 0%, #19bf85 100%);
-  --cta-secondary-bg: rgba(17, 20, 22, 0.03);
-  --cta-secondary-hover: rgba(17, 20, 22, 0.06);
-
-  --shadow-panel: 0 8px 24px rgba(15, 23, 42, 0.06);
-  --shadow-float: 0 16px 36px rgba(15, 23, 42, 0.1);
+    color-scheme: light;
+    --bg:            #faf9f6;
+    --bg-elevated:   #ffffff;
+    --surface-1:     #ffffff;
+    --surface-2:     #f4f4f5;
+    --surface-muted: rgba(255, 255, 255, 0.8);
+    --border-soft:   #e4e4e7;
+    --border-strong: #d4d4d8;
+    --text-primary:   #0a0a0a;
+    --text-secondary: #52525b;
+    --text-muted:     #a1a1aa;
+    --cta-bg:    #0a0a0a;
+    --cta-fg:    #ffffff;
+    --cta-hover: #1f1f23;
+    --accent:    #7c3aed;
+    --success:   #16a34a;
+    --warning:   #ea580c;
+    --danger:    #dc2626;
+    --success-bg: rgba(22, 163, 74, 0.08);
+    --warning-bg: rgba(234, 88, 12, 0.10);
+    --danger-bg:  rgba(220, 38, 38, 0.08);
+    --accent-bg:  rgba(124, 58, 237, 0.08);
+    --shadow-panel: 0 1px 3px rgba(0, 0, 0, 0.04), 0 0 0 1px var(--border-soft);
+    --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--border-soft);
 }
 
 @media (prefers-color-scheme: light) {
   :root:not(.dark) {
     color-scheme: light;
-
-    --bg: #f6f8fc;
-    --bg-elevated: #ffffff;
-    --surface-1: rgba(255, 255, 255, 0.94);
-    --surface-2: rgba(255, 255, 255, 0.98);
-    --surface-3: #f4f7fb;
-    --surface-muted: rgba(255, 255, 255, 0.62);
-    --surface-overlay: rgba(255, 255, 255, 0.94);
-    --panel-accent-bg: linear-gradient(180deg, rgba(247, 250, 255, 0.96), rgba(235, 242, 252, 0.92));
-
-    --border-soft: rgba(16, 24, 40, 0.08);
-    --border-strong: rgba(16, 24, 40, 0.14);
-    --border-focus: rgba(32, 192, 138, 0.36);
-
-    --text-primary: #111827;
-    --text-secondary: #334155;
-    --text-muted: #667085;
-    --text-faint: #94a3b8;
-
-    --accent: var(--brand-600);
-    --accent-strong: var(--brand-700);
-    --accent-bg: rgba(26, 151, 108, 0.1);
-    --accent-wash: rgba(83, 111, 255, 0.08);
-    --success: #18804a;
-    --success-bg: rgba(24, 128, 74, 0.1);
-    --warning: #b56a11;
-    --warning-bg: rgba(181, 106, 17, 0.1);
-    --danger: #b54747;
-    --danger-bg: rgba(181, 71, 71, 0.1);
-
-    --cta-bg: linear-gradient(135deg, #23d69a 0%, #16b67e 100%);
-    --cta-fg: #05120d;
-    --cta-hover: linear-gradient(135deg, #2ce0a5 0%, #19bf85 100%);
-    --cta-secondary-bg: rgba(17, 20, 22, 0.03);
-    --cta-secondary-hover: rgba(17, 20, 22, 0.06);
-
-    --shadow-panel: 0 8px 24px rgba(15, 23, 42, 0.06);
-    --shadow-float: 0 16px 36px rgba(15, 23, 42, 0.1);
+    --bg:            #faf9f6;
+    --bg-elevated:   #ffffff;
+    --surface-1:     #ffffff;
+    --surface-2:     #f4f4f5;
+    --surface-muted: rgba(255, 255, 255, 0.8);
+    --border-soft:   #e4e4e7;
+    --border-strong: #d4d4d8;
+    --text-primary:   #0a0a0a;
+    --text-secondary: #52525b;
+    --text-muted:     #a1a1aa;
+    --cta-bg:    #0a0a0a;
+    --cta-fg:    #ffffff;
+    --cta-hover: #1f1f23;
+    --accent:    #7c3aed;
+    --success:   #16a34a;
+    --warning:   #ea580c;
+    --danger:    #dc2626;
+    --success-bg: rgba(22, 163, 74, 0.08);
+    --warning-bg: rgba(234, 88, 12, 0.10);
+    --danger-bg:  rgba(220, 38, 38, 0.08);
+    --accent-bg:  rgba(124, 58, 237, 0.08);
+    --shadow-panel: 0 1px 3px rgba(0, 0, 0, 0.04), 0 0 0 1px var(--border-soft);
+    --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--border-soft);
   }
 }
 
+/* ── Reset & Base ── */
 *,
 *::before,
 *::after {
@@ -174,23 +128,23 @@ body {
 
 html {
   background: var(--bg);
-  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
-  background: var(--bg);
+  background-color: var(--bg);
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-feature-settings: "liga" 1, "calt" 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  line-height: 1.55;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  line-height: 1.6; /* 增大正文呼吸感 */
 }
 
 ::selection {
   background: var(--accent-bg);
-  color: var(--text-primary);
+  color: var(--accent);
 }
 
 a {
@@ -210,19 +164,20 @@ pre {
   font-family: var(--font-mono);
 }
 
+/* ── Typography Utilities ── */
 .kicker {
   font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 
 .section-title {
   margin: 0;
-  font-size: clamp(1.875rem, 1.4rem + 1.2vw, 2.75rem);
-  line-height: 1.05;
-  letter-spacing: -0.045em;
-  font-weight: 650;
+  font-size: clamp(1.75rem, 1.2rem + 1vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
   color: var(--text-primary);
 }

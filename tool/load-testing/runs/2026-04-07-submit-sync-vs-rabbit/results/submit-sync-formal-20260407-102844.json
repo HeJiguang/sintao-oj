@@ -1,0 +1,156 @@
+{
+    "metrics": {
+        "vus_max": {
+            "value": 20,
+            "min": 20,
+            "max": 20
+        },
+        "data_received": {
+            "count": 78631,
+            "rate": 1222.1299893397365
+        },
+        "http_req_waiting": {
+            "p(99)": 6834.558982,
+            "max": 7013.7265,
+            "avg": 3730.2939760456306,
+            "min": 604.6845,
+            "med": 3398.4168,
+            "p(90)": 5201.65524,
+            "p(95)": 5916.883959999995
+        },
+        "http_req_receiving": {
+            "p(95)": 0.9983299999999999,
+            "p(99)": 1.517982,
+            "max": 1.5782,
+            "avg": 0.21632281368821288,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0.59414
+        },
+        "iteration_duration": {
+            "p(90)": 6218.24956,
+            "p(95)": 6917.898129999994,
+            "p(99)": 7835.127888,
+            "max": 8014.2121,
+            "avg": 4731.982888212924,
+            "min": 1610.6918,
+            "med": 4399.4735
+        },
+        "checks": {
+            "passes": 783,
+            "fails": 6,
+            "value": 0.9923954372623575
+        },
+        "iterations": {
+            "count": 263,
+            "rate": 4.087703160284756
+        },
+        "http_req_blocked": {
+            "p(95)": 2.7449,
+            "p(99)": 3.2629,
+            "max": 3.2629,
+            "avg": 0.21212395437262357,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 263,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "vus": {
+            "min": 1,
+            "max": 20,
+            "value": 1
+        },
+        "http_reqs": {
+            "count": 263,
+            "rate": 4.087703160284756
+        },
+        "http_req_duration{expected_response:true}": {
+            "med": 3398.5301,
+            "p(90)": 5201.65524,
+            "p(95)": 5916.883959999995,
+            "p(99)": 6834.558982,
+            "max": 7013.7265,
+            "avg": 3730.5209315589377,
+            "min": 604.6845
+        },
+        "http_req_tls_handshaking": {
+            "p(95)": 0,
+            "p(99)": 0,
+            "max": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0
+        },
+        "data_sent": {
+            "count": 143335,
+            "rate": 2227.7982223551926
+        },
+        "http_req_duration": {
+            "max": 7013.7265,
+            "avg": 3730.5209315589377,
+            "min": 604.6845,
+            "med": 3398.5301,
+            "p(90)": 5201.65524,
+            "p(95)": 5916.883959999995,
+            "p(99)": 6834.558982,
+            "thresholds": {
+                "p(95)<5000": true
+            }
+        },
+        "http_req_connecting": {
+            "avg": 0.2076615969581749,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 2.6953399999999887,
+            "p(99)": 3.2629,
+            "max": 3.2629
+        },
+        "http_req_sending": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "p(99)": 0.5296299999999999,
+            "max": 0.6618,
+            "avg": 0.010632699619771865,
+            "min": 0,
+            "med": 0
+        }
+    },
+    "root_group": {
+        "checks": {
+            "status is 200": {
+                "passes": 263,
+                "fails": 0,
+                "name": "status is 200",
+                "path": "::status is 200",
+                "id": "6210a8cd14cd70477eba5c5e4cb3fb5f"
+            },
+            "business code is 1000": {
+                "name": "business code is 1000",
+                "path": "::business code is 1000",
+                "id": "5edf4452cfb54426124b5821315eb5b5",
+                "passes": 260,
+                "fails": 3
+            },
+            "sync or async payload is valid": {
+                "id": "e3de00f2012d8323284ab3a74573e3ac",
+                "passes": 260,
+                "fails": 3,
+                "name": "sync or async payload is valid",
+                "path": "::sync or async payload is valid"
+            }
+        },
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {}
+    }
+}

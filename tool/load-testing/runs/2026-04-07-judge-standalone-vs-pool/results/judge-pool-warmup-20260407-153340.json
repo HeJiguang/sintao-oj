@@ -1,0 +1,156 @@
+{
+    "metrics": {
+        "http_req_blocked": {
+            "avg": 0.132725,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0.3185399999999998,
+            "p(95)": 0.6901699999999995,
+            "p(99)": 0.9874739999999997,
+            "max": 1.0618
+        },
+        "http_req_sending": {
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "p(99)": 0,
+            "max": 0,
+            "avg": 0,
+            "min": 0
+        },
+        "http_req_receiving": {
+            "avg": 0.9205125,
+            "min": 0,
+            "med": 0,
+            "p(90)": 2.4988899999999994,
+            "p(95)": 3.866794999999998,
+            "p(99)": 4.961118999999999,
+            "max": 5.2347
+        },
+        "data_received": {
+            "count": 2375,
+            "rate": 473.70130996263265
+        },
+        "http_req_connecting": {
+            "max": 1.0618,
+            "avg": 0.132725,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0.3185399999999998,
+            "p(95)": 0.6901699999999995,
+            "p(99)": 0.9874739999999997
+        },
+        "data_sent": {
+            "rate": 762.7089723356241,
+            "count": 3824
+        },
+        "iterations": {
+            "count": 8,
+            "rate": 1.595625465137289
+        },
+        "http_req_waiting": {
+            "avg": 625.4699375,
+            "min": 430.7859,
+            "med": 461.52930000000003,
+            "p(90)": 879.0696499999998,
+            "p(95)": 1343.7214249999993,
+            "p(99)": 1715.4428449999996,
+            "max": 1808.3732
+        },
+        "http_req_duration{expected_response:true}": {
+            "p(99)": 1720.3111159999999,
+            "max": 1813.6079,
+            "avg": 626.39045,
+            "min": 430.7859,
+            "med": 461.52930000000003,
+            "p(90)": 880.6400599999997,
+            "p(95)": 1347.1239799999994
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 8,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "vus": {
+            "value": 1,
+            "min": 1,
+            "max": 1
+        },
+        "http_req_tls_handshaking": {
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "p(99)": 0,
+            "max": 0,
+            "avg": 0
+        },
+        "checks": {
+            "passes": 24,
+            "fails": 0,
+            "value": 1
+        },
+        "vus_max": {
+            "value": 1,
+            "min": 1,
+            "max": 1
+        },
+        "http_reqs": {
+            "count": 8,
+            "rate": 1.595625465137289
+        },
+        "iteration_duration": {
+            "min": 430.7859,
+            "med": 461.52930000000003,
+            "p(90)": 881.1130099999998,
+            "p(95)": 1348.1487049999994,
+            "p(99)": 1721.7772609999997,
+            "max": 1815.1844,
+            "avg": 626.7134875
+        },
+        "http_req_duration": {
+            "med": 461.52930000000003,
+            "p(90)": 880.6400599999997,
+            "p(95)": 1347.1239799999994,
+            "p(99)": 1720.3111159999999,
+            "max": 1813.6079,
+            "avg": 626.39045,
+            "min": 430.7859,
+            "thresholds": {
+                "p(95)<15000": false
+            }
+        }
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "status is 200": {
+                    "name": "status is 200",
+                    "path": "::status is 200",
+                    "id": "6210a8cd14cd70477eba5c5e4cb3fb5f",
+                    "passes": 8,
+                    "fails": 0
+                },
+                "business code is 1000": {
+                    "name": "business code is 1000",
+                    "path": "::business code is 1000",
+                    "id": "5edf4452cfb54426124b5821315eb5b5",
+                    "passes": 8,
+                    "fails": 0
+                },
+                "judge payload is valid": {
+                    "name": "judge payload is valid",
+                    "path": "::judge payload is valid",
+                    "id": "cbf26387da78175465e2a6d9347babd4",
+                    "passes": 8,
+                    "fails": 0
+                }
+            }
+    }
+}

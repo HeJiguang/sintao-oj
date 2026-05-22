@@ -34,6 +34,17 @@ spring:
             oj-agent:
               - uri: ${AGENT_PUBLIC_BASE_URL:http://127.0.0.1:8015}
 
+file:
+  max-time: 10
+  test: true
+  oss:
+    downloadUrl: ${FILE_OSS_DOWNLOAD_URL:}
+    accessKeyId: local-dummy
+    accessKeySecret: local-dummy
+    endpoint: http://oss-cn-hangzhou.aliyuncs.com
+    region: cn-hangzhou
+    bucketName: local-dummy
+
 mail:
   host: smtp.qq.com
   port: 587

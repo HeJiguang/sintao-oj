@@ -1,47 +1,126 @@
 import * as React from "react";
 
-import { Panel, StatCard } from "@aioj/ui";
-
 import { AdminShell } from "../components/admin-shell";
-import { getAdminDashboardSummary, getAdminProfile } from "../lib/admin-api";
+import { Panel, StatCard, Tag } from "@aioj/ui";
+import { getAdminExamRows, getAdminNoticeRows, getAdminProfile, getAdminQuestionRows, getAdminUserRows } from "../lib/admin-api";
 import { requireAdminAccessToken } from "../lib/server-auth";
 
 export default async function AdminDashboardPage() {
   const token = await requireAdminAccessToken();
-  const [admin, summary] = await Promise.all([
+  const [admin, questions, exams, users, notices] = await Promise.all([
     getAdminProfile(token),
-    getAdminDashboardSummary(token)
+    getAdminQuestionRows(token),
+    getAdminExamRows(token),
+    getAdminUserRows(token),
+    getAdminNoticeRows(token)
   ]);
+
+  const publishedNoticeCount = notices.filter((item) => item.statusLabel === "已发布").length;
+  const activeExamCount = exams.filter((item) => item.status === "已发布").length;
+  const frozenUserCount = users.filter((item) => item.status === "冻结").length;
 
   return (
     <AdminShell
       adminName={admin.nickName}
-      title="后台总览"
-      description="汇总当前系统规模，并保持核心运营入口清晰、稳定、可复核。"
+      title="管理概览"
+      description="后台首页优先给出当前可操作资源的总览、风险点和快捷入口，而不是堆叠低价值信息。"
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard detail="按后端分页统计汇总的题目总数" label="题目数" value={String(summary.questionCount)} />
-        <StatCard detail="按后端分页统计汇总的考试总数" label="考试数" value={String(summary.examCount)} />
-        <StatCard detail="按后端分页统计汇总的公告总数" label="公告数" value={String(summary.noticeCount)} />
-        <StatCard detail="按后端分页统计汇总的用户总数" label="用户数" value={String(summary.userCount)} />
+        <StatCard detail="当前题库中可维护的题目总量" label="题目数" value={String(questions.length)} />
+        <StatCard detail="当前已创建的考试场次数量" label="考试数" value={String(exams.length)} />
+        <StatCard detail="当前已发布公告数量" label="已发布公告" value={String(publishedNoticeCount)} />
+        <StatCard detail="当前处于冻结状态的用户数量" label="冻结用户" value={String(frozenUserCount)} />
       </div>
+
       <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
         <Panel className="p-5" tone="strong">
-          <p className="kicker">当前重点</p>
-          <h3 className="mt-2 text-xl font-semibold">运营焦点</h3>
+          <p className="kicker">Operations Focus</p>
+          <h3 className="mt-2 text-xl font-semibold">当前后台关注点</h3>
           <div className="mt-5 space-y-3 text-sm leading-7 text-[var(--text-secondary)]">
-            <p>用户端已经接入真实登录、真实题目详情、真实代码运行和异步判题链路。</p>
-            <p>后台当前已经接入题目、考试、公告和用户四类核心维护能力，并直连真实后端契约。</p>
-            <p>总览卡片直接读取后端分页元数据，不再从当前页行数据推算数量。</p>
+            <p>考试当前共 {exams.length} 场，其中可发布或已发布的考试 {activeExamCount} 场。</p>
+            <p>公告模块已切到真实 `tb_notice`，现在可以直接验证新增、编辑、发布、置顶和撤回。</p>
+            <p>题目编辑、考试编排和用户状态切换都已经走真实后端接口，不再依赖 mock。</p>
           </div>
         </Panel>
+
         <Panel className="p-5">
-          <p className="kicker">上线前检查</p>
-          <h3 className="mt-2 text-xl font-semibold">待确认事项</h3>
-          <div className="mt-5 space-y-3 text-sm leading-7 text-[var(--text-secondary)]">
-            <p>核验公告新增、编辑、发布、置顶与撤回动作，确认真实持久化状态一致。</p>
-            <p>串联检查题目编辑器的请求载荷、示例 JSON、默认代码和函数签名是否完整可用。</p>
-            <p>确认考试时间、关联题目、发布流程和回滚行为仍然符合业务约束。</p>
+          <p className="kicker">Quick Actions</p>
+          <h3 className="mt-2 text-xl font-semibold">常用入口</h3>
+          <div className="mt-5 grid gap-3">
+            <a className="rounded-[18px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-4 py-3 text-sm hover:bg-white/5" href="/questions/new">
+              新建题目
+            </a>
+            <a className="rounded-[18px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-4 py-3 text-sm hover:bg-white/5" href="/exams/new">
+              新建考试
+            </a>
+            <a className="rounded-[18px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-4 py-3 text-sm hover:bg-white/5" href="/notices/new">
+              发布公告
+            </a>
+            <a className="rounded-[18px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-4 py-3 text-sm hover:bg-white/5" href="/users">
+              查看用户状态
+            </a>
+          </div>
+        </Panel>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <Panel className="p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="kicker">Question Bank</p>
+              <h3 className="mt-2 text-lg font-semibold">最近题目</h3>
+            </div>
+            <a href="/questions" className="text-sm text-[var(--accent)]">查看全部</a>
+          </div>
+          <div className="mt-4 space-y-3">
+            {questions.slice(0, 4).map((item) => (
+              <div key={item.questionId} className="rounded-[16px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-4 py-3">
+                <p className="text-sm font-medium text-[var(--text-primary)]">{item.title}</p>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">#{item.questionId} · {item.difficulty}</p>
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        <Panel className="p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="kicker">Notices</p>
+              <h3 className="mt-2 text-lg font-semibold">公告状态</h3>
+            </div>
+            <a href="/notices" className="text-sm text-[var(--accent)]">查看全部</a>
+          </div>
+          <div className="mt-4 space-y-3">
+            {notices.slice(0, 4).map((item) => (
+              <div key={item.noticeId} className="rounded-[16px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{item.title}</p>
+                  <Tag tone={item.statusLabel === "已发布" ? "success" : "default"}>{item.statusLabel}</Tag>
+                </div>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">{item.publishTime}</p>
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        <Panel className="p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="kicker">Users</p>
+              <h3 className="mt-2 text-lg font-semibold">用户风险视图</h3>
+            </div>
+            <a href="/users" className="text-sm text-[var(--accent)]">查看全部</a>
+          </div>
+          <div className="mt-4 space-y-3">
+            {users.slice(0, 4).map((item) => (
+              <div key={item.userId} className="rounded-[16px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{item.nickName}</p>
+                  <Tag tone={item.status === "正常" ? "success" : "danger"}>{item.status}</Tag>
+                </div>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">{item.email}</p>
+              </div>
+            ))}
           </div>
         </Panel>
       </div>

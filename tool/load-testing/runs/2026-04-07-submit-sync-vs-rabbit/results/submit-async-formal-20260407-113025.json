@@ -1,0 +1,156 @@
+{
+    "metrics": {
+        "vus": {
+            "value": 20,
+            "min": 20,
+            "max": 20
+        },
+        "http_req_duration{expected_response:true}": {
+            "p(99)": 572.147263000001,
+            "max": 657.6939,
+            "avg": 132.91759132075472,
+            "min": 57.8389,
+            "med": 104.50825,
+            "p(90)": 202.07582000000002,
+            "p(95)": 262.25989999999996
+        },
+        "http_req_receiving": {
+            "med": 0,
+            "p(90)": 0.52702,
+            "p(95)": 0.5492349999999999,
+            "p(99)": 0.6963260000000016,
+            "max": 49.5502,
+            "avg": 0.1573499056603773,
+            "min": 0
+        },
+        "iteration_duration": {
+            "med": 1106.4268000000002,
+            "p(90)": 1205.72729,
+            "p(95)": 1266.522015,
+            "p(99)": 1582.211915,
+            "max": 1660.4366,
+            "avg": 1135.3629380188675,
+            "min": 1059.3805
+        },
+        "http_req_blocked": {
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "p(99)": 5.5363,
+            "max": 7.1231,
+            "avg": 0.10591990566037736,
+            "min": 0
+        },
+        "http_req_connecting": {
+            "p(99)": 5.032337000000004,
+            "max": 6.1834,
+            "avg": 0.09977433962264153,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "iterations": {
+            "count": 1060,
+            "rate": 17.59913570312503
+        },
+        "http_reqs": {
+            "count": 1060,
+            "rate": 17.59913570312503
+        },
+        "http_req_duration": {
+            "avg": 132.91759132075472,
+            "min": 57.8389,
+            "med": 104.50825,
+            "p(90)": 202.07582000000002,
+            "p(95)": 262.25989999999996,
+            "p(99)": 572.147263000001,
+            "max": 657.6939,
+            "thresholds": {
+                "p(95)<5000": false
+            }
+        },
+        "http_req_waiting": {
+            "avg": 132.74553716981129,
+            "min": 57.8389,
+            "med": 104.40870000000001,
+            "p(90)": 201.60539000000003,
+            "p(95)": 262.1964,
+            "p(99)": 571.582751000001,
+            "max": 657.6939
+        },
+        "data_sent": {
+            "count": 585120,
+            "rate": 9714.722908125015
+        },
+        "data_received": {
+            "rate": 4180.541862611666,
+            "count": 251795
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 1060,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "vus_max": {
+            "value": 20,
+            "min": 20,
+            "max": 20
+        },
+        "http_req_tls_handshaking": {
+            "p(95)": 0,
+            "p(99)": 0,
+            "max": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0
+        },
+        "http_req_sending": {
+            "max": 2.7741,
+            "avg": 0.014704245283018866,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "p(99)": 0.5281080000000007
+        },
+        "checks": {
+            "passes": 3180,
+            "fails": 0,
+            "value": 1
+        }
+    },
+    "root_group": {
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "status is 200": {
+                    "path": "::status is 200",
+                    "id": "6210a8cd14cd70477eba5c5e4cb3fb5f",
+                    "passes": 1060,
+                    "fails": 0,
+                    "name": "status is 200"
+                },
+                "business code is 1000": {
+                    "path": "::business code is 1000",
+                    "id": "5edf4452cfb54426124b5821315eb5b5",
+                    "passes": 1060,
+                    "fails": 0,
+                    "name": "business code is 1000"
+                },
+                "sync or async payload is valid": {
+                    "name": "sync or async payload is valid",
+                    "path": "::sync or async payload is valid",
+                    "id": "e3de00f2012d8323284ab3a74573e3ac",
+                    "passes": 1060,
+                    "fails": 0
+                }
+            },
+        "name": ""
+    }
+}

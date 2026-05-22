@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import ExamWorkspacePage from "../app/exams/[examId]/page";
 import { mapJudgeHistoryRow } from "../lib/judge-history";
+import { normalizeJudgeOutcome } from "../lib/judge-result";
 
 async function main() {
   const examHtml = renderToStaticMarkup(
@@ -30,6 +31,20 @@ async function main() {
   assert.equal(history.runtime, "12 ms");
   assert.equal(history.memory, "2048 KB");
   assert.equal(history.submittedAt, "2026-03-31 09:45:00");
+
+  const outcome = normalizeJudgeOutcome({
+    pass: 0,
+    exeMessage: "Wrong Answer",
+    userExeResultList: [
+      { input: "1 2", output: "3", exeOutput: "4" },
+      { input: "2 2", output: "4", exeOutput: "4" }
+    ]
+  });
+  assert.equal(outcome.status, "Wrong Answer");
+  assert.equal(outcome.failedCases?.length, 1);
+  assert.equal(outcome.failedCases?.[0]?.input, "1 2");
+  assert.equal(outcome.failedCases?.[0]?.expectedOutput, "3");
+  assert.equal(outcome.failedCases?.[0]?.actualOutput, "4");
 }
 
 void main();

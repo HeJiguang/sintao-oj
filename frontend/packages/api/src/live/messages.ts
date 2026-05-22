@@ -22,7 +22,7 @@ export async function fetchLiveMessages(_token?: string | null) {
     content: item.content ?? "",
     category: (item.category as PublicMessage["category"] | null) ?? defaultCategory,
     publishedAt: item.publishTime?.replace("T", " ") ?? "刚刚",
-    pinned: item.isPinned === 1
+    pinned: item.isPinned === 1 || index === 0
   }));
 }
 

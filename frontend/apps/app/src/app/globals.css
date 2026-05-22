@@ -4,193 +4,60 @@
 @source "../../../../packages/config/src";
 @source "../";
 
+/* ── 微型噪点纹理 (Noise Texture) ── */
+/* 极微弱的黑白底噪点，仅在背景层呈现，增加物理材质感 */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.035), transparent 24%),
-    radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.05), transparent 22%);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 1; /* Dark Mode 下默认透明度 */
 }
 
-:root.light body::before {
-  background:
-    radial-gradient(circle at top left, rgba(61, 122, 110, 0.08), transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
-}
-
+:root.light body::before,
 @media (prefers-color-scheme: light) {
   :root:not(.dark) body::before {
-    background:
-      radial-gradient(circle at top left, rgba(61, 122, 110, 0.08), transparent 24%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
+    opacity: 0.025; /* Light Mode 使用更轻的噪点 */
   }
 }
 
-:root {
-  --syncode-shell-edge: rgba(255, 255, 255, 0.028);
-}
-
-:root.light {
-  --syncode-shell-edge: rgba(15, 23, 42, 0.04);
-}
-
-@media (prefers-color-scheme: light) {
-  :root:not(.dark) {
-    --syncode-shell-edge: rgba(15, 23, 42, 0.04);
-  }
-}
-
-.syncode-app-shell {
-  position: relative;
-  isolation: isolate;
-}
-
-.syncode-app-shell::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, var(--syncode-shell-edge), transparent 16rem),
-    linear-gradient(90deg, transparent 12%, var(--syncode-shell-edge) 12%, var(--syncode-shell-edge) calc(12% + 1px), transparent calc(12% + 1px));
-  opacity: 0.8;
-}
-
-.syncode-app-sidebar {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 24%);
-}
-
-.syncode-app-main {
-  position: relative;
-}
-
-.syncode-app-content {
-  position: relative;
-}
-
-.syncode-app-rail {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.016), transparent 22%);
-}
-
-.syncode-page-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.syncode-page-hero {
-  position: relative;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.022), transparent 52%),
-    var(--surface-2);
-}
-
-.syncode-page-hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.026) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.026) 1px, transparent 1px);
-  background-size: 32px 32px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.24), transparent 72%);
-  opacity: 0.3;
-}
-
-.syncode-page-section {
-  background: var(--surface-2);
-}
-
-.syncode-dashboard-focus-list {
-  position: relative;
-}
-
-.syncode-problem-board,
-.syncode-exam-list {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.syncode-filter-strip {
-  border-top: 1px solid var(--border-soft);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.014), transparent 40%);
-}
-
-.syncode-problem-entry,
-.syncode-exam-entry,
-.syncode-rail-panel {
-  background: var(--surface-2);
-}
-
-.hero-grid {
-  position: relative;
-}
-
-.hero-grid::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35), transparent 100%);
-  opacity: 0.12;
-}
-
+/* ── App 专属样式覆盖 ── */
 .code-editor-frame {
+  background-color: #0d0d0f;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
   overflow: hidden;
-  border-radius: 0;
-  border: 0;
-  background: #0b0f16;
 }
 
 :root.light .code-editor-frame {
-  background: #f7f9fc;
+  background-color: #1a1a1a;
 }
 
-@media (prefers-color-scheme: light) {
-  :root:not(.dark) .code-editor-frame {
-    background: #f7f9fc;
-  }
-}
-
-.lang-tabs-bar {
-  display: flex;
-  gap: 1rem;
-  border-bottom: 1px solid var(--border-soft);
-}
-
+/* 语言切换 Tab — 下划线现代风格 (加宽留白间距) */
 .lang-tab {
   position: relative;
-  border: none;
-  background: transparent;
-  padding: 0.75rem 0.125rem;
+  padding: 0.625rem 0.25rem;
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--text-muted);
+  border: none;
+  background: transparent;
   cursor: pointer;
-  transition: color 180ms ease-out;
+  transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .lang-tab::after {
   content: "";
   position: absolute;
-  right: 0;
   bottom: -1px;
   left: 0;
+  right: 0;
   height: 2px;
-  border-radius: 2px 2px 0 0;
   background: transparent;
-  transition: background-color 180ms ease-out;
+  border-radius: 2px 2px 0 0;
+  transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .lang-tab:hover {
@@ -202,186 +69,32 @@ body::before {
 }
 
 .lang-tab[data-active="true"]::after {
-  background: var(--accent);
+  background: var(--text-primary);
 }
 
-.syncode-workspace-scene {
-  background:
-    linear-gradient(180deg, rgba(10, 14, 22, 0.78), rgba(8, 11, 19, 0.92));
-}
-
-.syncode-workspace-shell {
-  border: 1px solid var(--border-soft);
-  border-radius: 12px;
-  background: var(--surface-2);
-  box-shadow: var(--shadow-panel);
-}
-
-.syncode-workspace-column {
-  min-height: 0;
-  background: var(--surface-1);
-}
-
-.syncode-workspace-divider {
-  width: 1px;
-  flex-shrink: 0;
-  background: var(--border-soft);
-}
-
-.syncode-workspace-primary-resize-handle {
-  width: 8px;
-  background: transparent;
+.lang-tabs-bar {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 1.5rem; /* 增加选项卡间距 */
+  border-bottom: 1px solid var(--border-soft);
 }
 
-.syncode-workspace-resize-pill {
-  width: 2px;
-  height: 56px;
-  border-radius: 999px;
-  background: var(--border-soft);
-  transition: background-color 150ms ease;
-}
-
-.syncode-workspace-primary-resize-handle:hover .syncode-workspace-resize-pill,
-.syncode-workspace-primary-resize-handle:focus-visible .syncode-workspace-resize-pill,
-.syncode-workspace-ai:hover .syncode-workspace-resize-pill {
-  background: var(--accent);
-}
-
-.syncode-workspace-problem {
-  min-width: 320px;
-}
-
-.syncode-workspace-ai {
-  min-width: 48px;
-  background: var(--surface-1);
-}
-
+/* ── 呼吸灯动效 (Breathing Status Dot) ── */
 @keyframes soft-pulse {
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.55; transform: scale(0.96); }
+  0%   { opacity: 1; transform: scale(1); }
+  50%  { opacity: 0.5; transform: scale(0.9); }
   100% { opacity: 1; transform: scale(1); }
 }
 
 .animate-soft-pulse {
-  animation: soft-pulse 2.8s ease-in-out infinite;
+  animation: soft-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-@keyframes fade-in-up {
+/* AI 打字机动效 (Fade-in cascade) */
+@keyframes fadeInSlideUp {
   from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .ai-typewriter-enter {
-  animation: fade-in-up 0.45s ease-out forwards;
-}
-
-:root {
-  --heatmap-border: rgba(159, 181, 255, 0.12);
-  --heatmap-hover-border: rgba(70, 216, 162, 0.45);
-  --heatmap-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  --heatmap-level-0: #0f1628;
-  --heatmap-level-1: #12392b;
-  --heatmap-level-2: #17604a;
-  --heatmap-level-3: #1d8f69;
-  --heatmap-level-4: #28c792;
-}
-
-:root.light {
-  --heatmap-border: rgba(148, 163, 184, 0.24);
-  --heatmap-hover-border: rgba(22, 116, 87, 0.32);
-  --heatmap-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
-  --heatmap-level-0: #e8eef5;
-  --heatmap-level-1: #d9f0e5;
-  --heatmap-level-2: #a8e0c6;
-  --heatmap-level-3: #5fc294;
-  --heatmap-level-4: #1c8458;
-}
-
-@media (prefers-color-scheme: light) {
-  :root:not(.dark) {
-    --heatmap-border: rgba(148, 163, 184, 0.24);
-    --heatmap-hover-border: rgba(22, 116, 87, 0.32);
-    --heatmap-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
-    --heatmap-level-0: #e8eef5;
-    --heatmap-level-1: #d9f0e5;
-    --heatmap-level-2: #a8e0c6;
-    --heatmap-level-3: #5fc294;
-    --heatmap-level-4: #1c8458;
-  }
-}
-
-.submission-heatmap-cell {
-  border: 1px solid var(--heatmap-border);
-  background: var(--heatmap-level-0);
-  box-shadow: var(--heatmap-shadow);
-}
-
-.submission-heatmap-cell[data-intensity="1"] {
-  background: var(--heatmap-level-1);
-}
-
-.submission-heatmap-cell[data-intensity="2"] {
-  background: var(--heatmap-level-2);
-}
-
-.submission-heatmap-cell[data-intensity="3"] {
-  background: var(--heatmap-level-3);
-}
-
-.submission-heatmap-cell[data-intensity="4"] {
-  background: var(--heatmap-level-4);
-}
-
-.submission-heatmap-cell:hover {
-  border-color: var(--heatmap-hover-border);
-}
-
-:root.light .submission-heatmap-cell,
-:root:not(.dark) .submission-heatmap-cell {
-  border-color: var(--heatmap-border);
-  background: var(--heatmap-level-0);
-  box-shadow: var(--heatmap-shadow);
-}
-
-:root.light .submission-heatmap-cell[data-intensity="1"] {
-  background: var(--heatmap-level-1);
-}
-
-:root.light .submission-heatmap-cell[data-intensity="2"] {
-  background: var(--heatmap-level-2);
-}
-
-:root.light .submission-heatmap-cell[data-intensity="3"] {
-  background: var(--heatmap-level-3);
-}
-
-:root.light .submission-heatmap-cell[data-intensity="4"] {
-  background: var(--heatmap-level-4);
-}
-
-@media (prefers-color-scheme: light) {
-  :root:not(.dark) .submission-heatmap-cell {
-    border-color: var(--heatmap-border);
-    background: var(--heatmap-level-0);
-    box-shadow: var(--heatmap-shadow);
-  }
-
-  :root:not(.dark) .submission-heatmap-cell[data-intensity="1"] {
-    background: var(--heatmap-level-1);
-  }
-
-  :root:not(.dark) .submission-heatmap-cell[data-intensity="2"] {
-    background: var(--heatmap-level-2);
-  }
-
-  :root:not(.dark) .submission-heatmap-cell[data-intensity="3"] {
-    background: var(--heatmap-level-3);
-  }
-
-  :root:not(.dark) .submission-heatmap-cell[data-intensity="4"] {
-    background: var(--heatmap-level-4);
-  }
+  animation: fadeInSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

@@ -1,13 +1,11 @@
 # Load Testing
 
-This directory stores load-testing scripts, notes, and result artifacts for SynCode performance benchmarking.
+Shared assets for load testing live here.
 
-Planned focus areas:
-- exam list DB vs Redis
-- sync submit vs async submit
-- polling vs WebSocket result delivery
+Structure:
+- `bin/`: shared tools such as `k6.exe`
+- `runs/`: one folder per benchmark run or benchmark topic
 
-Current entry points:
-- `run-exam-list.ps1`: beginner-friendly PowerShell wrapper for the exam list benchmark
-- `exam-list-db-vs-redis.js`: k6 script for `/friend/exam/semiLogin/list` and `/friend/exam/semiLogin/redis/list`
-- `compare-exam-list-results.ps1`: compare two k6 summary JSON files and print a concise result table
+Rule:
+- each load test gets its own folder under `runs/`
+- scripts, notes, and result files for that test stay inside that folder

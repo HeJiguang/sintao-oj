@@ -45,7 +45,12 @@ public class JudgeResultWebSocketHandler extends TextWebSocketHandler {
         try {
             subscribeMessage = JSON.parseObject(message.getPayload(), JudgeResultSubscribeMessage.class);
         } catch (Exception ex) {
-            sendError(session, null, "Invalid subscribe payload");
+            sendError(session, null, "Invalid payload");
+            return;
+        }
+
+        if (subscribeMessage != null && "ping".equalsIgnoreCase(subscribeMessage.getType())) {
+            session.sendMessage(new TextMessage("{\"type\":\"pong\"}"));
             return;
         }
         if (subscribeMessage == null

@@ -131,6 +131,10 @@ $frontendWebPort = Get-EnvInt -Name "FRONTEND_WEB_PORT" -DefaultValue 4000
 $frontendAppPort = Get-EnvInt -Name "FRONTEND_APP_PORT" -DefaultValue 4201
 $frontendAdminPort = Get-EnvInt -Name "FRONTEND_ADMIN_PORT" -DefaultValue 4002
 $agentPort = Get-EnvInt -Name "OJ_AGENT_PORT" -DefaultValue 8016
+$systemPort = Get-EnvInt -Name "OJ_SYSTEM_PORT" -DefaultValue 9201
+$friendPort = Get-EnvInt -Name "OJ_FRIEND_PORT" -DefaultValue 9202
+$jobPort = Get-EnvInt -Name "OJ_JOB_PORT" -DefaultValue 9203
+$judgePort = Get-EnvInt -Name "OJ_JUDGE_PORT" -DefaultValue 9204
 $frontendWebUrl = "http://127.0.0.1:{0}" -f $frontendWebPort
 $frontendAppUrl = "http://127.0.0.1:{0}/app" -f $frontendAppPort
 $frontendAdminUrl = "http://127.0.0.1:{0}/admin" -f $frontendAdminPort
@@ -157,23 +161,23 @@ $services = @(
     @{
         Name = "oj-system"
         FilePath = $mvn
-        Args = @("-f", "oj-modules/oj-system/pom.xml", "-Dmaven.repo.local=temp/m2-repo", "spring-boot:run", "-Dspring-boot.run.profiles=local")
+        Args = @("-f", "oj-modules/oj-system/pom.xml", "-Dmaven.repo.local=temp/m2-repo", "spring-boot:run", "-Dspring-boot.run.profiles=local", "-Dspring-boot.run.arguments=--server.port=$systemPort")
         WorkingDirectory = $repoRoot
-        Port = 9201
+        Port = $systemPort
     }
     @{
         Name = "oj-judge"
         FilePath = $mvn
-        Args = @("-f", "oj-modules/oj-judge/pom.xml", "-Dmaven.repo.local=temp/m2-repo", "spring-boot:run", "-Dspring-boot.run.profiles=local")
+        Args = @("-f", "oj-modules/oj-judge/pom.xml", "-Dmaven.repo.local=temp/m2-repo", "spring-boot:run", "-Dspring-boot.run.profiles=local", "-Dspring-boot.run.arguments=--server.port=$judgePort")
         WorkingDirectory = $repoRoot
-        Port = 9204
+        Port = $judgePort
     }
     @{
         Name = "oj-friend"
         FilePath = $mvn
-        Args = @("-f", "oj-modules/oj-friend/pom.xml", "-Dmaven.repo.local=temp/m2-repo", "spring-boot:run", "-Dspring-boot.run.profiles=local")
+        Args = @("-f", "oj-modules/oj-friend/pom.xml", "-Dmaven.repo.local=temp/m2-repo", "spring-boot:run", "-Dspring-boot.run.profiles=local", "-Dspring-boot.run.arguments=--server.port=$friendPort")
         WorkingDirectory = $repoRoot
-        Port = 9202
+        Port = $friendPort
     }
     @{
         Name = "oj-gateway"
@@ -188,9 +192,9 @@ if (-not $SkipJob) {
     $services += @{
         Name = "oj-job"
         FilePath = $mvn
-        Args = @("-f", "oj-modules/oj-job/pom.xml", "-Dmaven.repo.local=temp/m2-repo", "spring-boot:run", "-Dspring-boot.run.profiles=local")
+        Args = @("-f", "oj-modules/oj-job/pom.xml", "-Dmaven.repo.local=temp/m2-repo", "spring-boot:run", "-Dspring-boot.run.profiles=local", "-Dspring-boot.run.arguments=--server.port=$jobPort")
         WorkingDirectory = $repoRoot
-        Port = 9203
+        Port = $jobPort
     }
 }
 

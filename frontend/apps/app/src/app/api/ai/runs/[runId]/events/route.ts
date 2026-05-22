@@ -18,7 +18,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
     if (value) headers.set(key, value);
   }
 
-  const upstream = await fetch(`${resolveAgentApiBaseUrl()}/api/runs/${encodeURIComponent(runId)}/events`, {
+  const upstream = await fetch(`${resolveAgentApiBaseUrl()}/ai/runs/${encodeURIComponent(runId)}/events`, {
     method: "GET",
     headers,
     cache: "no-store"

@@ -1,0 +1,71 @@
+{
+  "runName": "2026-04-07-polling-vs-websocket",
+  "startedAt": "2026-04-07T06:06:32.769000+00:00",
+  "completedAt": "2026-04-07T06:06:34.514000+00:00",
+  "baseUrl": "http://127.0.0.1:19090",
+  "questionId": 99992,
+  "examId": null,
+  "samples": 1,
+  "pollIntervalMs": 1500,
+  "pollMaxAttempts": 6,
+  "timeoutMs": 15000,
+  "sampleResults": [
+    {
+      "sample": 1,
+      "requestId": "ed131570c4364b9d85628d8246d0a2bf",
+      "acceptedAt": "2026-04-07T06:06:32.897000+00:00",
+      "ws": {
+        "ok": false,
+        "mode": "ws",
+        "requestId": "ed131570c4364b9d85628d8246d0a2bf",
+        "opened": false,
+        "lastMessage": null,
+        "closeCode": 200,
+        "error": "200, message='Invalid response status', url='ws://127.0.0.1:9202/ws/judge/result?token=Bearer%20eyJhbGciOiJIUzUxMiJ9.eyJ1c2VySWQiOjIwNDEzOTcxODcxMTk3NTkzNjEsInVzZXJLZXkiOiJiNGNhZGVlYy01ODU4LTRiOTEtYjNhZC0yOGZhYTM0YzA1NDIifQ.GfEewd7THrieqzy3fz6qbX-Nhlc017_uBM0tdAnuIl_AvSDP2z1PPJcud38Mv1tA1LMJVINFRUjwZEo41HqfHA'",
+        "finishedAt": null,
+        "latencyMs": null
+      },
+      "poll": {
+        "ok": true,
+        "mode": "poll",
+        "pass": 1,
+        "pollRequests": 2,
+        "finishedAt": 1775541994514,
+        "latencyMs": 1617
+      },
+      "deltaMs": null
+    }
+  ],
+  "summary": {
+    "ws": {
+      "totalSamples": 1,
+      "successCount": 0,
+      "successRatePct": 0.0,
+      "avgMs": null,
+      "p95Ms": null,
+      "p99Ms": null,
+      "minMs": null,
+      "maxMs": null
+    },
+    "poll": {
+      "totalSamples": 1,
+      "successCount": 1,
+      "successRatePct": 100.0,
+      "avgMs": 1617.0,
+      "p95Ms": 1617.0,
+      "p99Ms": 1617.0,
+      "minMs": 1617.0,
+      "maxMs": 1617.0,
+      "avgPollRequests": 2.0,
+      "maxPollRequests": 2
+    },
+    "comparison": {
+      "pairedSuccessCount": 0,
+      "avgDeltaMs": null,
+      "avgDeltaPct": null,
+      "p95DeltaMs": null,
+      "p95DeltaPct": null,
+      "avgPollRequests": null
+    }
+  }
+}

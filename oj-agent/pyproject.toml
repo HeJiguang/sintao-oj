@@ -1,26 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "oj-agent"
 version = "0.1.0"
-description = "Standalone LangGraph-based OJ tutor service"
+description = "LangGraph-based OnlineOJ workspace tutor agent"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi>=0.115.0",
-    "httpx>=0.27.0",
-    "langgraph>=0.2.0",
-    "openai>=1.52.0",
-    "pydantic>=2.9.0",
-    "PyYAML>=6.0.2",
-    "uvicorn>=0.30.0",
+    "fastapi>=0.115,<1",
+    "pydantic>=2.8,<3",
+    "langgraph>=1.0,<2",
+    "langchain-core>=1.2,<2",
+    "langchain-openai>=1.1,<2",
+    "qdrant-client>=1.10,<2",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.3.0",
+    "pytest>=8.0,<9",
+    "httpx>=0.27,<1",
 ]
-
-[tool.pytest.ini_options]
-pythonpath = ["."]
-testpaths = ["tests"]
 
 [tool.setuptools]
 packages = ["app"]
+
+[tool.setuptools.package-dir]
+app = "app"

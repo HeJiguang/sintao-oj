@@ -1,0 +1,71 @@
+{
+  "runName": "2026-04-07-polling-vs-websocket",
+  "startedAt": "2026-04-07T06:07:21.977000+00:00",
+  "completedAt": "2026-04-07T06:07:23.769000+00:00",
+  "baseUrl": "http://127.0.0.1:19090",
+  "questionId": 99992,
+  "examId": null,
+  "samples": 1,
+  "pollIntervalMs": 1500,
+  "pollMaxAttempts": 6,
+  "timeoutMs": 15000,
+  "sampleResults": [
+    {
+      "sample": 1,
+      "requestId": "07e184f193a84893ad7d1e01b28fe514",
+      "acceptedAt": "2026-04-07T06:07:22.147000+00:00",
+      "ws": {
+        "ok": true,
+        "mode": "ws",
+        "requestId": "07e184f193a84893ad7d1e01b28fe514",
+        "opened": true,
+        "lastMessage": "{\"asyncStatus\":1,\"caseJudgeRes\":\"[{\\\"exeOutput\\\":\\\"3\\\",\\\"input\\\":\\\"\\\",\\\"output\\\":\\\"3\\\"}]\",\"exeMessage\":\"运行成功\",\"finishTime\":\"2026-04-07 14:07:23.051769800\",\"pass\":1,\"requestId\":\"07e184f193a84893ad7d1e01b28fe514\",\"score\":100,\"useMemory\":0,\"useTime\":81,\"userId\":2041397393127194625}",
+        "pass": 1,
+        "asyncStatus": 1,
+        "finishedAt": 1775542043189,
+        "latencyMs": 1042
+      },
+      "poll": {
+        "ok": true,
+        "mode": "poll",
+        "pass": 1,
+        "pollRequests": 2,
+        "finishedAt": 1775542043769,
+        "latencyMs": 1622
+      },
+      "deltaMs": 580
+    }
+  ],
+  "summary": {
+    "ws": {
+      "totalSamples": 1,
+      "successCount": 1,
+      "successRatePct": 100.0,
+      "avgMs": 1042.0,
+      "p95Ms": 1042.0,
+      "p99Ms": 1042.0,
+      "minMs": 1042.0,
+      "maxMs": 1042.0
+    },
+    "poll": {
+      "totalSamples": 1,
+      "successCount": 1,
+      "successRatePct": 100.0,
+      "avgMs": 1622.0,
+      "p95Ms": 1622.0,
+      "p99Ms": 1622.0,
+      "minMs": 1622.0,
+      "maxMs": 1622.0,
+      "avgPollRequests": 2.0,
+      "maxPollRequests": 2
+    },
+    "comparison": {
+      "pairedSuccessCount": 1,
+      "avgDeltaMs": 580,
+      "avgDeltaPct": 35.76,
+      "p95DeltaMs": 580.0,
+      "p95DeltaPct": 35.76,
+      "avgPollRequests": 2.0
+    }
+  }
+}

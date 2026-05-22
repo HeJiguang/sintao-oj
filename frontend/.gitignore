@@ -1,7 +1,3 @@
 node_modules
-apps.zip
 apps/*/.next
 apps/*/next-env.d.ts
-apps/*/.env.local
-.env.local
-.env*.local

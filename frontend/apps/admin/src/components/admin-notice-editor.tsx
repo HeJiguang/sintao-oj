@@ -4,9 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 
-import { frontendPreviewMode } from "@aioj/config";
 import type { AdminNoticeDetail } from "../lib/admin-api";
-import { adminApiPath, adminInternalPath } from "../lib/paths";
 import { Button, Input, Panel, Textarea } from "@aioj/ui";
 
 type AdminNoticeEditorProps = {
@@ -36,14 +34,8 @@ export function AdminNoticeEditor({ notice }: AdminNoticeEditorProps) {
     setMessage(null);
     setError(null);
 
-    if (frontendPreviewMode) {
-      setSubmitting(false);
-      setMessage("当前是前端预览模式，公告改动不会提交到后端。");
-      return;
-    }
-
     try {
-      const response = await fetch(adminApiPath("/notices"), {
+      const response = await fetch("/api/notices", {
         method: notice ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)
@@ -55,7 +47,7 @@ export function AdminNoticeEditor({ notice }: AdminNoticeEditorProps) {
       }
 
       setMessage("公告已保存。");
-      router.push(adminInternalPath("/notices"));
+        router.push("/notices");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "公告保存失败。");
@@ -66,21 +58,17 @@ export function AdminNoticeEditor({ notice }: AdminNoticeEditorProps) {
 
   async function handleDelete() {
     if (!notice?.noticeId || !window.confirm("确认删除这条公告吗？")) return;
-    if (frontendPreviewMode) {
-      setError("当前是前端预览模式，删除操作已禁用。");
-      return;
-    }
     setSubmitting(true);
     setError(null);
     try {
-      const response = await fetch(`${adminApiPath("/notices")}?noticeId=${encodeURIComponent(notice.noticeId)}`, {
+      const response = await fetch(`/api/notices?noticeId=${encodeURIComponent(notice.noticeId)}`, {
         method: "DELETE"
       });
       const payload = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) {
         throw new Error(payload?.message ?? "公告删除失败。");
       }
-      router.push(adminInternalPath("/notices"));
+        router.push("/notices");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "公告删除失败。");
@@ -139,11 +127,11 @@ export function AdminNoticeEditor({ notice }: AdminNoticeEditorProps) {
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" disabled={submitting}>
             {submitting ? <LoaderCircle size={14} className="animate-spin" /> : null}
-            {frontendPreviewMode ? "预览模式下不可保存" : "保存公告"}
+            保存公告
           </Button>
           {notice ? (
             <Button type="button" variant="secondary" disabled={submitting} onClick={handleDelete}>
-              {frontendPreviewMode ? "预览模式下不可删除" : "删除公告"}
+              删除公告
             </Button>
           ) : null}
         </div>

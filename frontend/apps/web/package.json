@@ -4,7 +4,6 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
     "test": "tsx src/__tests__/smoke.test.tsx"
   },
   "dependencies": {

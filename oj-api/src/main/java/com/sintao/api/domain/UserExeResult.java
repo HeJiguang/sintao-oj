@@ -9,8 +9,8 @@ public class UserExeResult {
 
     private String input;
 
-    private String output;   //鏈熸湜杈撳嚭
+    private String output;
 
-    private String exeOutput; //瀹為檯杈撳嚭
+    private String exeOutput;
 }
 
